@@ -1,14 +1,57 @@
-import { Link } from "react-router-dom";
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { isAxiosError } from "axios";
 
 export default function Register() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const { register, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+
+    // 1. Basic Frontend Validation
+    if (!name || !email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    // 2. Submit to Backend
+    try {
+      await register({ name, email, password });
+      // 3. On success, route to the protected dashboard
+      navigate("/");
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response) {
+        // Extract the error message we defined in our Express controller
+        setError(
+          err.response.data.error || "Registration failed. Please try again.",
+        );
+      } else {
+        setError("An unexpected network error occurred.");
+      }
+    }
+  };
+
   return (
     <div className="h-screen w-full bg-[#0a0a0a] p-4 md:p-6 overflow-hidden flex items-center justify-center">
       <div className="w-full h-full border border-white/10 rounded-4xl flex flex-col lg:flex-row relative overflow-hidden bg-[#0a0a0a] shadow-2xl">
+        {/* Left Side - Brand & Atmosphere */}
         <div className="hidden lg:flex w-1/2 h-full relative flex-col items-center justify-center border-r border-white/5">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-175 h-175 bg-brand-green/10 rounded-full blur-[130px] pointer-events-none"></div>
 
           <div className="relative z-10 text-center">
-            {/* Typographic Logo[cite: 3] */}
             <div className="flex flex-col items-center justify-center mb-6 select-none">
               <span className="text-5xl font-extralight tracking-[0.2em] text-white uppercase leading-none ml-2">
                 Bloom
@@ -26,7 +69,6 @@ export default function Register() {
 
         {/* Right Side - Interactive Form */}
         <div className="w-full lg:w-1/2 h-full flex flex-col items-center justify-center px-4 md:px-8 relative z-10 overflow-hidden">
-          {/* Mobile-only Logo */}
           <div className="flex lg:hidden flex-col items-center justify-center mb-6 select-none">
             <span className="text-4xl font-extralight tracking-[0.2em] text-white uppercase leading-none ml-2">
               Bloom
@@ -47,39 +89,52 @@ export default function Register() {
                 </p>
               </div>
 
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                {/* Preferred Name Input Group */}
+              {/* Dynamic Error Banner */}
+              {error && (
+                <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs text-center font-medium tracking-wide">
+                  {error}
+                </div>
+              )}
+
+              <form className="space-y-4" onSubmit={handleSubmit}>
                 <div>
                   <label className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
                     Preferred Name
                   </label>
                   <input
                     type="text"
-                    className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-4 text-white placeholder-white/40 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green focus:bg-white/10 transition-all duration-300"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={isLoading}
+                    className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-4 text-white placeholder-white/40 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green focus:bg-white/10 transition-all duration-300 disabled:opacity-50"
                     placeholder="How should we call you?"
                   />
                 </div>
 
-                {/* Email Input Group */}
                 <div>
                   <label className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
                     Email Address
                   </label>
                   <input
                     type="email"
-                    className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-4 text-white placeholder-white/40 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green focus:bg-white/10 transition-all duration-300"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                    className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-4 text-white placeholder-white/40 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green focus:bg-white/10 transition-all duration-300 disabled:opacity-50"
                     placeholder="hello@example.com"
                   />
                 </div>
 
-                {/* Password Input Group */}
                 <div>
                   <label className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
                     Password
                   </label>
                   <input
                     type="password"
-                    className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-4 text-white placeholder-white/40 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green focus:bg-white/10 transition-all duration-300"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-4 text-white placeholder-white/40 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green focus:bg-white/10 transition-all duration-300 disabled:opacity-50"
                     placeholder="••••••••"
                   />
                 </div>
@@ -87,9 +142,10 @@ export default function Register() {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="w-full bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest uppercase text-sm py-4 rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(29,185,84,0.15)] hover:shadow-[0_0_30px_rgba(29,185,84,0.3)] active:scale-[0.98]"
+                    disabled={isLoading}
+                    className="w-full bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest uppercase text-sm py-4 rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(29,185,84,0.15)] hover:shadow-[0_0_30px_rgba(29,185,84,0.3)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
-                    Create Account
+                    {isLoading ? "Creating..." : "Create Account"}
                   </button>
                 </div>
               </form>
@@ -107,7 +163,6 @@ export default function Register() {
               </div>
             </div>
 
-            {/* Privacy Note */}
             <p className="text-center text-xs text-white/30 mt-4 tracking-wide">
               Your data is encrypted and strictly private.
             </p>
