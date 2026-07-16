@@ -92,6 +92,43 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+export const getMe = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // 1. Grab the token from the secure cookie
+    const token = req.cookies.jwt;
+
+    if (!token) {
+      res.status(401).json({ error: "No session found." });
+      return;
+    }
+
+    // 2. Verify the token using jwt secret
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+      userId: string;
+    };
+
+    // 3. Find the user in Supabase
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+
+    // 4. Return the user data to restore the frontend state
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(401).json({ error: "Invalid or expired session." });
+  }
+};
+
 export const logout = (req: Request, res: Response): void => {
   res.cookie("jwt", "", { maxAge: 0 });
   res.status(200).json({ message: "Logged out successfully." });
