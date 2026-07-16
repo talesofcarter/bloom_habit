@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   IconHome,
   IconCalendar,
@@ -12,11 +13,19 @@ import {
 export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
   const navItems = [
     { name: "Home", path: "/", icon: IconHome },
     { name: "Progress", path: "/calendar", icon: IconCalendar },
     { name: "Settings", path: "/settings", icon: IconSettings },
   ];
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   return (
     <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden relative">
@@ -30,7 +39,7 @@ export default function DashboardLayout() {
         onClick={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* Sidebar - Fixed on mobile, relative on desktop */}
+      {/* Sidebar */}
       <aside
         className={`
         fixed inset-y-0 left-0 z-50 w-70 border-r border-white/5 flex flex-col bg-[#0a0a0a]/95 backdrop-blur-3xl
@@ -93,7 +102,10 @@ export default function DashboardLayout() {
         </nav>
 
         <div className="p-6 md:p-8 border-t border-white/5">
-          <button className="flex items-center gap-4 px-5 py-4 w-full rounded-2xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/3 transition-all duration-500 group border border-transparent">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-4 px-5 py-4 w-full rounded-2xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/3 transition-all duration-500 group border border-transparent"
+          >
             <IconLogout
               size={22}
               stroke={1.5}
