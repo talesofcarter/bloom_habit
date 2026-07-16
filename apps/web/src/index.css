@@ -19,6 +19,10 @@
     @apply m-0 bg-bg-base text-white antialiased font-geomini selection:bg-brand-green selection:text-black;
   }
 
+  button {
+    @apply cursor-pointer;
+  }
+
   ::-webkit-scrollbar {
     width: 12px;
   }
