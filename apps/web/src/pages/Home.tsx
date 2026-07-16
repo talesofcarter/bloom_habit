@@ -1,142 +1,236 @@
-import { useState, useRef, useEffect } from "react";
-import { IconFlame, IconCheck, IconCalendarEvent } from "@tabler/icons-react";
+import { useState, useEffect, type FormEvent } from "react";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../lib/api";
+import { isAxiosError } from "axios";
+import {
+  IconFlame,
+  IconCircleCheck,
+  IconCalendarEvent,
+} from "@tabler/icons-react";
+
+interface CheckInPayload {
+  title: string;
+  note: string;
+}
+
+interface UserStats {
+  totalCheckIns: number;
+  currentStreak: number;
+  lastCheckIn: string | null;
+}
 
 export default function Home() {
+  const { user } = useAuth();
+
+  // Stats State
+  const [stats, setStats] = useState<UserStats>({
+    totalCheckIns: 0,
+    currentStreak: 0,
+    lastCheckIn: null,
+  });
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
+
+  // Form State
+  const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  // Auto-resize the textarea as the user types
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.max(120, textareaRef.current.scrollHeight)}px`;
+  // Fetch stats on mount and after a successful check-in
+  const fetchStats = async () => {
+    try {
+      const response = await api.get<UserStats>("/check-ins/stats");
+      setStats(response.data);
+    } catch (err) {
+      console.error("Failed to load stats", err);
+    } finally {
+      setIsStatsLoading(false);
     }
-  }, [note]);
+  };
 
-  // Handle the "Zen Mode" overlay click to close
-  const handleOverlayClick = () => {
-    setIsFocused(false);
-    textareaRef.current?.blur();
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+
+    if (!title.trim() || !note.trim()) {
+      setError("Please fill out both the title and your note.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const payload: CheckInPayload = { title, note };
+      await api.post("/check-ins", payload);
+
+      setSuccess(true);
+      setTitle("");
+      setNote("");
+
+      // Instantly refresh the stats above to show the new streak!
+      fetchStats();
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response) {
+        setError(err.response.data.error || "Failed to save check-in.");
+      } else {
+        setError("An unexpected network error occurred.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-6rem)]">
-      {/* Zen Mode Overlay - Fades in when typing */}
-      <div
-        className={`fixed inset-0 bg-[#0a0a0a]/80 backdrop-blur-sm z-20 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isFocused
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
-        onClick={handleOverlayClick}
-      />
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl md:text-4xl font-light text-white tracking-wide">
+          Welcome back, <span className="font-medium">{user?.name}</span>.
+        </h1>
+        <p className="text-sm text-white/50 tracking-wide">
+          Consistency is the path to recovery.
+        </p>
+      </div>
 
-      <div className="relative z-10 space-y-12 transition-all duration-500">
-        {/* Header section fades back slightly during Zen Mode */}
-        <header
-          className={`transition-opacity duration-500 ${isFocused ? "opacity-30" : "opacity-100"}`}
-        >
-          <h1 className="text-3xl font-extralight tracking-wide text-white mb-2">
-            Good afternoon.
-          </h1>
-          <p className="text-white/50 tracking-wide text-sm">
-            Take a deep breath. How is your journey going today?
-          </p>
-        </header>
-
-        {/* Quick Stats - Premium micro-cards */}
-        <div
-          className={`grid grid-cols-2 sm:grid-cols-3 gap-4 transition-opacity duration-500 ${isFocused ? "opacity-30" : "opacity-100"}`}
-        >
-          <div className="bg-white/2 border border-white/5 rounded-2xl p-5 flex flex-col justify-between h-28">
-            <IconFlame
-              size={20}
-              className="text-brand-green drop-shadow-[0_0_8px_rgba(29,185,84,0.3)]"
-            />
-            <div>
-              <div className="text-2xl font-light text-white tracking-widest">
-                12
-              </div>
-              <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/40 mt-1">
-                Day Streak
-              </div>
-            </div>
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Streak Card */}
+        <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-orange-500/20 transition-all"></div>
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+            <IconFlame size={24} className="text-orange-400" stroke={1.5} />
           </div>
-
-          <div className="bg-white/2 border border-white/5 rounded-2xl p-5 flex flex-col justify-between h-28">
-            <IconCalendarEvent size={20} className="text-white/50" />
-            <div>
-              <div className="text-2xl font-light text-white tracking-widest">
-                Jul 16
-              </div>
-              <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/40 mt-1">
-                Current Date
-              </div>
-            </div>
-          </div>
-
-          <div className="hidden sm:flex bg-white/2 border border-white/5 rounded-2xl p-5 flex-col justify-between h-28">
-            <IconCheck size={20} className="text-white/50" />
-            <div>
-              <div className="text-2xl font-light text-white tracking-widest">
-                30
-              </div>
-              <div className="text-[10px] uppercase font-bold tracking-[0.2em] text-white/40 mt-1">
-                Total Check-ins
-              </div>
-            </div>
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
+              Current Streak
+            </p>
+            <p className="text-2xl font-light text-white">
+              {isStatsLoading ? "..." : `${stats.currentStreak} Days`}
+            </p>
           </div>
         </div>
 
-        {/* The Editor Area - Elevates to z-30 during Zen Mode */}
-        <div
-          className={`relative transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-            isFocused ? "z-30 scale-[1.02] md:scale-[1.05]" : "z-10 scale-100"
-          }`}
-        >
-          <div
-            className={`bg-[#0a0a0a] rounded-3xl transition-shadow duration-700 ${
-              isFocused ? "shadow-[0_0_40px_rgba(0,0,0,0.5)]" : ""
-            }`}
-          >
-            <textarea
-              ref={textareaRef}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              placeholder="What are you feeling right now? Record your triggers, victories, or thoughts..."
-              className={`w-full bg-white/3 border rounded-3xl p-6 text-lg tracking-wide text-white placeholder-white/30 resize-none focus:outline-none transition-all duration-500 leading-relaxed min-h-40 ${
-                isFocused
-                  ? "border-brand-green/30 bg-white/5"
-                  : "border-white/10 hover:border-white/20"
-              }`}
+        {/* Total Check-ins Card */}
+        <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-brand-green/10 rounded-full blur-2xl pointer-events-none group-hover:bg-brand-green/20 transition-all"></div>
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+            <IconCircleCheck
+              size={24}
+              className="text-brand-green"
+              stroke={1.5}
             />
+          </div>
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
+              Total Check-Ins
+            </p>
+            <p className="text-2xl font-light text-white">
+              {isStatsLoading ? "..." : stats.totalCheckIns}
+            </p>
+          </div>
+        </div>
 
-            {/* Action Bar - Slides in when focused or typing */}
-            <div
-              className={`flex items-center justify-between px-2 pt-4 transition-all duration-500 ${
-                isFocused || note.length > 0
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 -translate-y-4 pointer-events-none"
-              }`}
-            >
-              <span className="text-xs font-semibold tracking-widest text-white/30 uppercase">
-                {note.length} characters
-              </span>
+        {/* Last Check-in Card */}
+        <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/20 transition-all"></div>
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+            <IconCalendarEvent
+              size={24}
+              className="text-blue-400"
+              stroke={1.5}
+            />
+          </div>
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
+              Last Entry
+            </p>
+            <p className="text-sm font-medium text-white mt-1">
+              {isStatsLoading
+                ? "..."
+                : stats.lastCheckIn
+                  ? new Date(stats.lastCheckIn).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : "Never"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Check-In Form (Same as before) */}
+      <div className="bg-white/3 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-green/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+        <h2 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
+          Daily Check-In
+          <div className="h-px bg-white/10 flex-1 ml-4"></div>
+        </h2>
+
+        {success ? (
+          <div className="bg-brand-green/10 border border-brand-green/20 rounded-2xl p-8 text-center space-y-3">
+            <div className="w-12 h-12 bg-brand-green/20 rounded-full flex items-center justify-center mx-auto mb-4 text-brand-green">
+              <IconCircleCheck size={24} stroke={2} />
+            </div>
+            <h3 className="text-white font-medium">Check-in complete!</h3>
+            <p className="text-white/60 text-sm">
+              Your progress for today has been securely recorded.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+            {error && (
+              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium tracking-wide">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
+                Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={isLoading}
+                placeholder="e.g., Day 12: Feeling stronger"
+                className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/30 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-all duration-300 disabled:opacity-50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
+                Notes
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                disabled={isLoading}
+                placeholder="Reflect on your day, your triggers, or your victories..."
+                rows={4}
+                className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/30 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-all duration-300 resize-none disabled:opacity-50"
+              />
+            </div>
+
+            <div className="pt-2">
               <button
-                className="bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest text-xs uppercase px-8 py-3 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(29,185,84,0.2)] hover:shadow-[0_0_25px_rgba(29,185,84,0.3)] active:scale-[0.98]"
-                onClick={(e) => {
-                  e.preventDefault();
-                  // Check-in logic will go here
-                  setIsFocused(false);
-                }}
+                type="submit"
+                disabled={isLoading}
+                className="bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest uppercase text-xs px-8 py-4 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(29,185,84,0.15)] hover:shadow-[0_0_25px_rgba(29,185,84,0.3)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Log Check-in
+                {isLoading ? "Saving..." : "Submit Check-In"}
               </button>
             </div>
-          </div>
-        </div>
+          </form>
+        )}
       </div>
     </div>
   );

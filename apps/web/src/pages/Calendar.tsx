@@ -1,171 +1,345 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { api } from "../lib/api";
 import {
+  IconCalendarEvent,
+  IconQuote,
   IconChevronLeft,
   IconChevronRight,
-  IconCheck,
-  IconLock,
 } from "@tabler/icons-react";
+import { isAxiosError } from "axios";
+
+interface CheckIn {
+  id: string;
+  title: string;
+  note: string;
+  date: string;
+  createdAt: string;
+}
 
 export default function Calendar() {
-  // Mock data for July 2026
-  const [currentMonth] = useState("July 2026");
+  // Data State
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Generating a simple mock grid (0 = missed, 1 = checked in, 2 = today, null = future/empty)
-  const days = [
-    null,
-    null,
-    null,
-    1,
-    1,
-    1,
-    0,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0,
-    1,
-    1,
-    2,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-  ];
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
 
-  const recentNotes = [
-    {
-      date: "Jul 15, 2026",
-      preview:
-        "Felt a strong urge this morning, but I took a walk instead. Proud of myself.",
-    },
-    { date: "Jul 14, 2026", preview: "A very calm day. Work kept me busy." },
-    {
-      date: "Jul 12, 2026",
-      preview: "Struggled a bit today. Need to remember why I started this.",
-    },
-  ];
+  // Calendar Grid State
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await api.get("/check-ins");
+        if (Array.isArray(response.data)) {
+          setCheckIns(response.data);
+        } else {
+          setError("Received unexpected data format from the server.");
+          setCheckIns([]);
+        }
+      } catch (err: unknown) {
+        if (isAxiosError(err) && err.response?.data?.error) {
+          setError(err.response.data.error);
+        } else {
+          setError("Failed to load your journey history.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+
+  const safeCheckIns = useMemo(() => {
+    return Array.isArray(checkIns) ? checkIns : [];
+  }, [checkIns]);
+
+  // Pagination Logic
+  const totalPages = Math.ceil(safeCheckIns.length / ITEMS_PER_PAGE);
+  const paginatedCheckIns = safeCheckIns.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+
+  // Map history dates for the Calendar Grid highlight
+  const checkInDateSet = useMemo(() => {
+    const dates = new Set<string>();
+    safeCheckIns.forEach((entry) => {
+      if (entry.date) {
+        const dateObj = new Date(entry.date);
+        const dateString = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
+        dates.add(dateString);
+      }
+    });
+    return dates;
+  }, [safeCheckIns]);
+
+  // Calendar Engine Logic
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+  const handlePrevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
+  const handleNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8 max-w-4xl mx-auto pb-12 w-full animate-in fade-in duration-500">
+        {/* Header Skeleton */}
+        <div className="space-y-3 mb-10 text-center md:text-left">
+          <div className="h-10 w-64 bg-white/5 rounded-xl animate-pulse mx-auto md:mx-0"></div>
+          <div className="h-4 w-48 bg-white/5 rounded-md animate-pulse mx-auto md:mx-0"></div>
+        </div>
+
+        {/* Stacked Layout Skeleton */}
+        <div className="flex flex-col gap-12 w-full">
+          {/* TOP: Calendar Grid Skeleton */}
+          <div className="w-full bg-white/2 border border-white/5 rounded-4xl p-6 md:p-8">
+            <div className="flex justify-between items-center mb-8">
+              <div className="h-6 w-32 bg-white/10 rounded-lg animate-pulse"></div>
+              <div className="flex gap-2">
+                <div className="h-8 w-8 bg-white/5 rounded-full animate-pulse"></div>
+                <div className="h-8 w-8 bg-white/5 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={`day-${i}`}
+                  className="h-3 w-full bg-white/5 rounded-sm animate-pulse"
+                ></div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-2 md:gap-4">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <div
+                  key={`grid-${i}`}
+                  className="h-10 md:h-14 bg-white/5 rounded-xl animate-pulse"
+                ></div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom: Timeline Skeleton */}
+          <div className="w-full relative pl-4 md:pl-8">
+            <div className="absolute left-3.75 md:left-7.75 top-4 bottom-4 w-px bg-white/5"></div>
+
+            <div className="space-y-8">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={`card-${i}`} className="relative group">
+                  <div className="absolute -left-7 md:-left-11 top-6 w-4 h-4 bg-[#0a0a0a] border-2 border-white/10 rounded-full animate-pulse z-10"></div>
+                  <div className="bg-white/2 border border-white/5 rounded-3xl p-6 md:p-8 ml-4 md:ml-6">
+                    <div className="h-6 w-32 bg-white/10 rounded-lg animate-pulse mb-5"></div>
+                    <div className="h-6 w-3/4 bg-white/10 rounded-md animate-pulse mb-5"></div>
+                    <div className="space-y-3">
+                      <div className="h-3 w-full bg-white/5 rounded-md animate-pulse"></div>
+                      <div className="h-3 w-[90%] bg-white/5 rounded-md animate-pulse"></div>
+                      <div className="h-3 w-[75%] bg-white/5 rounded-md animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-12 pb-12 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out max-w-4xl mx-auto pb-12">
       {/* Header */}
-      <header>
-        <h1 className="text-3xl font-extralight tracking-wide text-white mb-2">
-          Your Progress.
+      <div className="space-y-2 text-center md:text-left mb-10">
+        <h1 className="text-3xl md:text-4xl font-light text-white tracking-wide">
+          Your <span className="font-medium">Journey</span>.
         </h1>
-        <p className="text-white/50 tracking-wide text-sm">
-          Consistency is the path to recovery. One day at a time.
+        <p className="text-sm text-white/50 tracking-wide">
+          Review your progress and consistency.
         </p>
-      </header>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Calendar Grid Section */}
-        <div className="lg:col-span-2 bg-white/2 border border-white/5 rounded-3xl p-8 md:p-10">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-xl font-light text-white tracking-widest uppercase">
-              {currentMonth}
+      {error && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium text-center">
+          {error}
+        </div>
+      )}
+
+      {/* Main Layout */}
+      <div className="flex flex-col gap-12 w-full">
+        <div className="w-full bg-white/3 border border-white/10 rounded-4xl p-6 md:p-8 backdrop-blur-xl shadow-2xl">
+          {/* Calendar Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <h2 className="text-xl md:text-2xl font-medium text-white tracking-wide">
+              {currentMonth.toLocaleString("default", { month: "long" })} {year}
             </h2>
             <div className="flex gap-2">
-              <button className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors border border-white/10">
-                <IconChevronLeft size={20} className="text-white" />
+              <button
+                onClick={handlePrevMonth}
+                className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white border border-white/10"
+              >
+                <IconChevronLeft size={20} stroke={1.5} />
               </button>
-              <button className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors border border-white/10 opacity-50 cursor-not-allowed">
-                <IconChevronRight size={20} className="text-white" />
+              <button
+                onClick={handleNextMonth}
+                className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white border border-white/10"
+              >
+                <IconChevronRight size={20} stroke={1.5} />
               </button>
             </div>
           </div>
 
-          {/* Days of Week */}
-          <div className="grid grid-cols-7 gap-2 mb-4 text-center">
+          {/* Days of the Week */}
+          <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <span
+              <div
                 key={day}
-                className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/30"
+                className="text-center text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/40"
               >
                 {day}
-              </span>
+              </div>
             ))}
           </div>
 
-          {/* Calendar Cells */}
+          {/* The Calendar Grid */}
           <div className="grid grid-cols-7 gap-2 md:gap-4">
-            {days.map((status, index) => (
-              <div
-                key={index}
-                className={`
-                  aspect-square rounded-xl flex items-center justify-center transition-all duration-300
-                  ${status === 1 ? "bg-brand-green/10 border border-brand-green/30 text-brand-green shadow-[inset_0_0_15px_rgba(29,185,84,0.1)]" : ""}
-                  ${status === 0 ? "bg-white/5 border border-white/5 text-white/20" : ""}
-                  ${status === 2 ? "bg-white/10 border-2 border-brand-green text-white shadow-[0_0_20px_rgba(29,185,84,0.2)] scale-105 relative" : ""}
-                  ${status === null ? "bg-transparent border border-white/2" : ""}
-                `}
-              >
-                {status !== null && (
-                  <span
-                    className={`text-sm md:text-base font-medium ${status === 2 ? "font-bold" : ""}`}
-                  >
-                    {index - 2 > 0 ? index - 2 : ""}
-                  </span>
-                )}
-                {/* Indicator for today */}
-                {status === 2 && (
-                  <div className="absolute -bottom-2 w-1.5 h-1.5 bg-brand-green rounded-full animate-pulse" />
-                )}
-              </div>
+            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+              <div key={`empty-${i}`} className="h-12 md:h-16 rounded-xl"></div>
             ))}
+
+            {/* Actual Days */}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const hasCheckIn = checkInDateSet.has(dateString);
+
+              return (
+                <div
+                  key={day}
+                  className={`
+                    flex items-center justify-center h-12 md:h-16 rounded-xl text-sm md:text-base font-medium transition-all duration-300 w-full
+                    ${
+                      hasCheckIn
+                        ? "bg-brand-green/20 text-brand-green border border-brand-green/30 shadow-[0_0_15px_rgba(29,185,84,0.15)]"
+                        : "bg-white/2 text-white/40 border border-white/5"
+                    }
+                  `}
+                >
+                  {day}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-brand-green/20 border border-brand-green/30 shadow-[0_0_10px_rgba(29,185,84,0.3)]"></div>
+            <span className="text-xs text-white/50 tracking-wide uppercase font-semibold">
+              Completed Check-in
+            </span>
           </div>
         </div>
 
-        {/* History / Recent Check-ins */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-2">
-            <IconLock size={18} className="text-white/40" />
-            <h3 className="text-xs font-bold tracking-[0.2em] uppercase text-white/50">
-              Private History
-            </h3>
-          </div>
+        <div className="w-full relative">
+          {safeCheckIns.length === 0 && !error ? (
+            <div className="text-center py-20 bg-white/3 border border-white/10 rounded-4xl backdrop-blur-xl">
+              <IconCalendarEvent
+                size={48}
+                className="mx-auto text-white/20 mb-4"
+                stroke={1}
+              />
+              <h3 className="text-white text-lg font-medium">No entries yet</h3>
+              <p className="text-white/50 text-sm mt-2">
+                Your journey begins on the Home page.
+              </p>
+            </div>
+          ) : (
+            <div className="relative pl-4 md:pl-8">
+              {/* Vertical Timeline Track */}
+              <div className="absolute left-3.75 md:left-7.75 top-4 bottom-4 w-px bg-linear-to-b from-brand-green/50 via-white/10 to-transparent"></div>
 
-          <div className="flex flex-col gap-4">
-            {recentNotes.map((note, i) => (
-              <div
-                key={i}
-                className="bg-white/2 border border-white/5 hover:bg-white/4 hover:border-white/10 transition-all duration-300 rounded-2xl p-6 cursor-pointer group"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-bold tracking-widest uppercase text-brand-green">
-                    {note.date}
-                  </span>
-                  <IconCheck
-                    size={16}
-                    className="text-brand-green/50 group-hover:text-brand-green transition-colors"
-                  />
-                </div>
-                <p className="text-sm text-white/70 leading-relaxed line-clamp-3 group-hover:text-white transition-colors">
-                  {note.preview}
-                </p>
+              <div className="space-y-8">
+                {paginatedCheckIns.map((entry, index) => {
+                  const entryDate = entry.date
+                    ? new Date(entry.date)
+                    : new Date();
+                  const day = entryDate.getDate();
+                  const monthName = entryDate.toLocaleDateString(undefined, {
+                    month: "short",
+                  });
+                  const entryYear = entryDate.getFullYear();
+
+                  return (
+                    <div
+                      key={entry.id || `timeline-entry-${index}`}
+                      className="relative group"
+                    >
+                      {/* Timeline Node */}
+                      <div className="absolute -left-7 md:-left-11 top-6 w-4 h-4 bg-[#0a0a0a] border-2 border-brand-green rounded-full z-10 group-hover:scale-125 group-hover:bg-brand-green group-hover:shadow-[0_0_15px_rgba(29,185,84,0.5)] transition-all duration-300"></div>
+
+                      {/* Content Card */}
+                      <div className="bg-white/3 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl hover:bg-white/5 transition-colors duration-300 ml-4 md:ml-6">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-lg text-brand-green text-xs font-bold tracking-widest uppercase">
+                            {monthName} {day}, {entryYear}
+                          </div>
+                        </div>
+
+                        <h3 className="text-xl font-medium text-white mb-3">
+                          {entry.title || "Untitled Entry"}
+                        </h3>
+
+                        {entry.note && (
+                          <div className="flex gap-4 items-start">
+                            <IconQuote
+                              size={24}
+                              className="text-white/20 shrink-0 mt-1"
+                              stroke={1.5}
+                            />
+                            <p className="text-white/70 leading-relaxed text-sm md:text-base font-light whitespace-pre-wrap">
+                              {entry.note}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
 
-          <button className="w-full py-4 text-xs font-bold tracking-widest uppercase text-white/50 hover:text-white border border-white/5 hover:border-white/20 hover:bg-white/2 rounded-2xl transition-all duration-300">
-            View All Entries
-          </button>
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-12 ml-4 md:ml-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/3 border border-white/10 rounded-2xl p-4 backdrop-blur-xl">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-6 py-3 w-full sm:w-auto text-sm font-semibold tracking-wide text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/5"
+                  >
+                    Previous
+                  </button>
+
+                  <span className="text-xs font-semibold tracking-widest text-white/50 uppercase">
+                    Page {currentPage} of {totalPages}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                    className="px-6 py-3 w-full sm:w-auto text-sm font-semibold tracking-wide text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/5"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
