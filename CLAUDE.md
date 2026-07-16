@@ -62,9 +62,9 @@ Key decisions:
 | Frontend | **React (Vite) + Tailwind CSS** | Fast dev loop, huge ecosystem, Tailwind keeps styling quick without a design system overhead |
 | Backend | **Node.js + Express** | Minimal boilerplate, easy to reason about for a prototype |
 | ORM | **Prisma** | Type-safe queries, painless migrations, scales well as schema grows |
-| Database | **PostgreSQL** (hosted via Supabase or Neon) | Relational integrity, generous free tiers, easy managed upgrade path |
+| Database | **PostgreSQL** (hosted via Supabase) | Relational integrity, generous free tiers, easy managed upgrade path |
 | Auth | **JWT (httpOnly cookies) + bcrypt** | Stateless, secure, standard; avoids storing plaintext or reversible passwords |
-| Hosting (prototype) | **Vercel** (frontend) + **Railway/Render** (backend) | Fast to deploy, minimal ops overhead, cheap to start |
+| Hosting (prototype) | **Vercel** (frontend) + **Render** (backend) | Fast to deploy, minimal ops overhead, cheap to start |
 | Testing | **Jest + Supertest** | Standard JS testing, keeps auth and check-in logic covered as it grows |
 
 ### Security notes specific to this app's purpose
