@@ -9,6 +9,7 @@ import {
   IconMenu2,
   IconX,
 } from "@tabler/icons-react";
+import LogoMark from "../components/LogoMark";
 
 export default function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -42,32 +43,39 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <aside
         className={`
-        fixed inset-y-0 left-0 z-50 w-70 border-r border-white/5 flex flex-col bg-[#0a0a0a]/95 backdrop-blur-3xl
-        transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
-        md:relative md:translate-x-0
-        ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-      `}
+    fixed inset-y-0 left-0 z-50 w-72 border-r border-white/5 flex flex-col bg-[#0a0a0a]/95 backdrop-blur-3xl
+    transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+    md:relative md:translate-x-0
+    ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
+  `}
       >
-        {/* Inline Typographic Logo + Mobile Close Button */}
-        <div className="p-8 md:p-10 pb-10 md:pb-12 flex items-center justify-between select-none">
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-extralight tracking-[0.2em] uppercase text-white">
-              Bloom
-            </span>
-            <span className="text-[10px] font-bold tracking-[0.3em] text-brand-green uppercase">
-              Habit
-            </span>
-          </div>
+        {/* Premium Mobile Close Button - Floating Glassmorphic Circle */}
+        <button
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="md:hidden absolute top-6 right-6 w-10 h-10 bg-white/5 border border-white/10 hover:bg-white/10 rounded-full flex items-center justify-center text-white/60 hover:text-white transition-all duration-300 z-50 shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+        >
+          <IconX size={18} stroke={2} />
+        </button>
 
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="md:hidden text-white/40 hover:text-white transition-colors p-2 -mr-2"
-          >
-            <IconX size={22} stroke={1.5} />
-          </button>
+        {/* Header & Brand Lockup */}
+        <div className="pt-10 pb-8 px-8 flex items-center select-none relative">
+          <div className="flex items-center gap-4">
+            {/* Upscaled logo with optimized glow */}
+            <LogoMark className="w-12 h-12 shrink-0 drop-shadow-[0_0_12px_rgba(29,185,84,0.4)]" />
+
+            {/* Stacked text block fixes the horizontal border collision */}
+            <div className="flex flex-col justify-center mt-1">
+              <span className="text-2xl font-extralight tracking-[0.2em] uppercase text-white leading-none">
+                Bloom
+              </span>
+              <span className="text-[10px] font-bold tracking-[0.4em] text-brand-green uppercase mt-1.5 ml-0.5">
+                Habit
+              </span>
+            </div>
+          </div>
         </div>
 
-        <nav className="flex-1 px-6 space-y-3 overflow-y-auto">
+        <nav className="flex-1 px-5 space-y-2 overflow-y-auto mt-2">
           {navItems.map((item) => (
             <NavLink
               key={item.name}

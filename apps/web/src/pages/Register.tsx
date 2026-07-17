@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { isAxiosError } from "axios";
+import LogoMark from "../components/LogoMark";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -53,6 +54,7 @@ export default function Register() {
 
           <div className="relative z-10 text-center">
             <div className="flex flex-col items-center justify-center mb-6 select-none">
+              <LogoMark className="w-16 h-16 md:w-20 md:h-20 mb-4 drop-shadow-[0_0_15px_rgba(29,185,84,0.3)]" />
               <span className="text-5xl font-extralight tracking-[0.2em] text-white uppercase leading-none ml-2">
                 Bloom
               </span>
