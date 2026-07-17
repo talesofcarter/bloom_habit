@@ -11,7 +11,7 @@ import type {
   AuthContextType,
   LoginData,
   RegisterData,
-} from "../index/types";
+} from "../types/index";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

@@ -1,6 +1,13 @@
 import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { AuthRequest } from "../middleware/auth.middleware";
+import { milestoneConfig, Milestone } from "../config/milestones";
+
+export interface StatsResponse {
+  totalCheckIns: number;
+  currentStreak: number;
+  milestones: Milestone[];
+}
 
 export const createCheckIn = async (
   req: AuthRequest,
@@ -50,72 +57,6 @@ export const createCheckIn = async (
   }
 };
 
-export const getStats = async (
-  req: AuthRequest,
-  res: Response,
-): Promise<void> => {
-  try {
-    const userId = req.userId;
-    if (!userId) {
-      res.status(401).json({ error: "Unauthorized." });
-      return;
-    }
-
-    // 1. Fetch only the dates of the user's check-ins, sorted newest first
-    const checkIns = await prisma.checkIn.findMany({
-      where: { userId },
-      select: { date: true },
-      orderBy: { date: "desc" },
-    });
-
-    const totalCheckIns = checkIns.length;
-    let currentStreak = 0;
-
-    // 2. Streak Calculation Logic
-    if (totalCheckIns > 0) {
-      // Normalize today to midnight for clean comparison
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const firstEntry = new Date(checkIns[0].date);
-      firstEntry.setHours(0, 0, 0, 0);
-
-      // Calculate days between today and the most recent entry
-      const diffTime = today.getTime() - firstEntry.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
-
-      // If the last check-in was today or yesterday, the streak is alive!
-      if (diffDays <= 1) {
-        let expectedDate = new Date(firstEntry);
-
-        for (let i = 0; i < checkIns.length; i++) {
-          const entryDate = new Date(checkIns[i].date);
-          entryDate.setHours(0, 0, 0, 0);
-
-          if (entryDate.getTime() === expectedDate.getTime()) {
-            currentStreak++;
-            // Subtract one day to check the next historical entry
-            expectedDate.setDate(expectedDate.getDate() - 1);
-          } else {
-            // A gap was found, the streak ends here
-            break;
-          }
-        }
-      }
-    }
-
-    // 3. Return the calculated data
-    res.status(200).json({
-      totalCheckIns,
-      currentStreak,
-      lastCheckIn: totalCheckIns > 0 ? checkIns[0].date : null,
-    });
-  } catch (error) {
-    console.error("Get Stats Error:", error);
-    res.status(500).json({ error: "Failed to fetch stats." });
-  }
-};
-
 export const getCheckIns = async (
   req: AuthRequest,
   res: Response,
@@ -137,5 +78,76 @@ export const getCheckIns = async (
   } catch (error) {
     console.error("Get Check-Ins Error:", error);
     res.status(500).json({ error: "Failed to fetch check-in history." });
+  }
+};
+
+export const getStats = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = req.userId as string;
+
+    // 1. Fetch all check-in dates for this user, ordered newest to oldest
+    const checkIns = await prisma.checkIn.findMany({
+      where: { userId },
+      select: { date: true },
+      orderBy: { date: "desc" },
+    });
+
+    const totalCheckIns = checkIns.length;
+    let currentStreak = 0;
+
+    // 2. Safely calculate the consecutive streak
+    if (totalCheckIns > 0) {
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+
+      let expectedDate = new Date(today);
+      const firstCheckInDate = new Date(checkIns[0].date);
+      firstCheckInDate.setUTCHours(0, 0, 0, 0);
+
+      const diffTime = today.getTime() - firstCheckInDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0 || diffDays === 1) {
+        currentStreak = 1;
+        expectedDate = new Date(firstCheckInDate);
+
+        // Iterate through history to count consecutive days
+        for (let i = 1; i < checkIns.length; i++) {
+          expectedDate.setUTCDate(expectedDate.getUTCDate() - 1);
+
+          const nextDate = new Date(checkIns[i].date);
+          nextDate.setUTCHours(0, 0, 0, 0);
+
+          if (nextDate.getTime() === expectedDate.getTime()) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    // 3. Evaluate Milestones based on the calculated streak
+    const evaluatedMilestones: Milestone[] = milestoneConfig.map(
+      (milestone) => ({
+        ...milestone,
+        earned: currentStreak >= milestone.days,
+      }),
+    );
+
+    // 4. Return strictly typed response
+    const responseData: StatsResponse = {
+      totalCheckIns,
+      currentStreak,
+      milestones: evaluatedMilestones,
+    };
+
+    res.status(200).json(responseData);
+  } catch (error) {
+    console.error("Stats Error:", error);
+    res.status(500).json({ error: "Failed to calculate statistics." });
   }
 };
