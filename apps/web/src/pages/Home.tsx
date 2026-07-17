@@ -7,6 +7,7 @@ import {
   IconCircleCheck,
   IconCalendarEvent,
 } from "@tabler/icons-react";
+import SkeletonLoader from "../components/SkeletonLoader";
 
 interface CheckInPayload {
   title: string;
@@ -72,7 +73,6 @@ export default function Home() {
       setSuccess(true);
       setTitle("");
       setNote("");
-
       // Instantly refresh the stats above to show the new streak!
       fetchStats();
     } catch (err: unknown) {
@@ -103,69 +103,79 @@ export default function Home() {
         {/* Streak Card */}
         <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-orange-500/20 transition-all"></div>
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
             <IconFlame size={24} className="text-orange-400" stroke={1.5} />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
               Current Streak
             </p>
-            <p className="text-2xl font-light text-white">
-              {isStatsLoading ? "..." : `${stats.currentStreak} Days`}
-            </p>
+            {isStatsLoading ? (
+              <SkeletonLoader className="h-8 w-24 rounded-lg" />
+            ) : (
+              <p className="text-2xl font-light text-white">
+                {stats.currentStreak} Days
+              </p>
+            )}
           </div>
         </div>
 
         {/* Total Check-ins Card */}
         <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-brand-green/10 rounded-full blur-2xl pointer-events-none group-hover:bg-brand-green/20 transition-all"></div>
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
             <IconCircleCheck
               size={24}
               className="text-brand-green"
               stroke={1.5}
             />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
               Total Check-Ins
             </p>
-            <p className="text-2xl font-light text-white">
-              {isStatsLoading ? "..." : stats.totalCheckIns}
-            </p>
+            {isStatsLoading ? (
+              <SkeletonLoader className="h-8 w-16 rounded-lg" />
+            ) : (
+              <p className="text-2xl font-light text-white">
+                {stats.totalCheckIns}
+              </p>
+            )}
           </div>
         </div>
 
         {/* Last Check-in Card */}
         <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
           <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/20 transition-all"></div>
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
             <IconCalendarEvent
               size={24}
               className="text-blue-400"
               stroke={1.5}
             />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
               Last Entry
             </p>
-            <p className="text-sm font-medium text-white mt-1">
-              {isStatsLoading
-                ? "..."
-                : stats.lastCheckIn
+            {isStatsLoading ? (
+              <SkeletonLoader className="h-5 w-28 rounded-md mt-1.5" />
+            ) : (
+              <p className="text-sm font-medium text-white mt-1">
+                {stats.lastCheckIn
                   ? new Date(stats.lastCheckIn).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
                       year: "numeric",
                     })
                   : "Never"}
-            </p>
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Check-In Form (Same as before) */}
+      {/* Check-In Form */}
       <div className="bg-white/3 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-green/10 rounded-full blur-[80px] pointer-events-none"></div>
 
