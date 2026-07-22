@@ -25,6 +25,7 @@ model CheckIn {
   date      DateTime @db.Date
   title     String   @db.VarChar(120)
   note      String   @db.Text
+  isRelapse Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -15,6 +15,7 @@ interface CheckIn {
   note: string;
   date: string;
   createdAt: string;
+  isRelapse: boolean;
 }
 
 export default function Calendar() {
@@ -31,7 +32,7 @@ export default function Calendar() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 7; // Increased slightly for the leaner layout
+  const ITEMS_PER_PAGE = 7;
 
   // Calendar Grid State
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -252,7 +253,7 @@ export default function Calendar() {
       </div>
 
       {/* Notion-like Timeline */}
-      <div className="relative">
+      <div className="relative ml-2 md:ml-4">
         {safeCheckIns.length === 0 && !error ? (
           <div className="text-center py-24 border-t border-white/5">
             <IconCalendarEvent
@@ -265,97 +266,124 @@ export default function Calendar() {
             </h3>
           </div>
         ) : (
-          <div className="space-y-12">
-            {paginatedCheckIns.map((entry) => {
-              const entryDate = entry.date ? new Date(entry.date) : new Date();
-              const isEditing = editingId === entry.id;
+          <div>
+            {/* The Continuous Timeline Border */}
+            <div className="relative border-l border-white/10 space-y-12 pb-4">
+              {paginatedCheckIns.map((entry) => {
+                const entryDate = entry.date
+                  ? new Date(entry.date)
+                  : new Date();
+                const isEditing = editingId === entry.id;
 
-              return (
-                <div
-                  key={entry.id}
-                  className="group/block relative pl-6 md:pl-8 border-l border-white/10 hover:border-white/20 transition-colors duration-300"
-                >
-                  {/* Hover Action Menu */}
-                  {!isEditing && (
-                    <div className="absolute -left-4.25 top-0 opacity-0 group-hover/block:opacity-100 transition-opacity bg-[#0a0a0a] py-1">
-                      <button
-                        onClick={() => handleStartEdit(entry)}
-                        className="p-1.5 text-white/30 hover:text-white bg-white/5 hover:bg-white/10 rounded-md border border-white/5"
-                        title="Edit block"
-                      >
-                        <IconEdit size={14} stroke={1.5} />
-                      </button>
-                    </div>
-                  )}
+                return (
+                  <div
+                    key={entry.id}
+                    className="group/block relative pl-8 md:pl-10"
+                  >
+                    {/* Timeline Node (The dot on the line) */}
+                    <div
+                      className={`absolute -left-[5.5px] top-1.5 w-2.5 h-2.5 rounded-full border-[1.5px] bg-[#0a0a0a] z-10 transition-all duration-300 ${
+                        entry.isRelapse
+                          ? "border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]"
+                          : "border-white/20 group-hover/block:border-brand-green group-hover/block:shadow-[0_0_10px_rgba(29,185,84,0.4)]"
+                      }`}
+                    ></div>
 
-                  {/* Metadata */}
-                  <div className="text-[11px] font-semibold tracking-widest uppercase text-white/30 mb-3 flex items-center gap-2">
-                    {entryDate.toLocaleDateString(undefined, {
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </div>
-
-                  {/* EDIT MODE (Borderless, Notion-style inputs) */}
-                  {isEditing ? (
-                    <div className="space-y-3 animate-in fade-in duration-300 -ml-3">
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        disabled={isSaving}
-                        placeholder="Untitled"
-                        className="w-full bg-transparent px-3 py-1 text-xl font-semibold text-white placeholder-white/20 outline-none focus:bg-white/5 rounded-lg transition-colors"
-                        autoFocus
-                      />
-                      <textarea
-                        value={editNote}
-                        onChange={(e) => setEditNote(e.target.value)}
-                        disabled={isSaving}
-                        rows={3}
-                        placeholder="Empty note..."
-                        className="w-full bg-transparent px-3 py-2 text-white/70 text-base font-light leading-relaxed placeholder-white/20 outline-none focus:bg-white/5 rounded-lg resize-none transition-colors"
-                      />
-                      <div className="flex items-center gap-2 pl-3 pt-2">
-                        <button
-                          onClick={() => handleSaveEdit(entry.id)}
-                          disabled={isSaving}
-                          className="flex items-center gap-1.5 text-brand-green hover:text-brand-green/80 text-xs font-semibold tracking-wide transition-colors"
-                        >
-                          {isSaving ? "Saving..." : "Save edits"}
-                        </button>
-                        <span className="text-white/20">•</span>
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={isSaving}
-                          className="flex items-center gap-1.5 text-white/40 hover:text-white text-xs font-semibold tracking-wide transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* DISPLAY MODE */
-                    <div>
-                      <h3 className="text-xl font-semibold text-white mb-2 tracking-tight">
-                        {entry.title || "Untitled"}
-                      </h3>
-                      {entry.note && (
-                        <p className="text-white/60 leading-relaxed text-base font-light whitespace-pre-wrap">
-                          {entry.note}
-                        </p>
+                    {/* Metadata & Labels */}
+                    <div className="text-[11px] font-semibold tracking-widest uppercase mb-3 flex items-center gap-3">
+                      <span className="text-white/30">
+                        {entryDate.toLocaleDateString(undefined, {
+                          weekday: "long",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                      {entry.isRelapse && (
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-white/10"></span>
+                          <span className="text-orange-500/80">Setback</span>
+                        </>
                       )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+
+                    {/* EDIT MODE (Borderless, Notion-style inputs) */}
+                    {isEditing ? (
+                      <div className="space-y-3 animate-in fade-in duration-300 -ml-3">
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          disabled={isSaving}
+                          placeholder="Untitled"
+                          className="w-full bg-transparent px-3 py-1 text-xl font-semibold text-white placeholder-white/20 outline-none focus:bg-white/5 rounded-lg transition-colors"
+                          autoFocus
+                        />
+                        <textarea
+                          value={editNote}
+                          onChange={(e) => setEditNote(e.target.value)}
+                          disabled={isSaving}
+                          rows={3}
+                          placeholder="Empty note..."
+                          className="w-full bg-transparent px-3 py-2 text-white/70 text-base font-light leading-relaxed placeholder-white/20 outline-none focus:bg-white/5 rounded-lg resize-none transition-colors"
+                        />
+                        <div className="flex items-center gap-2 pl-3 pt-2">
+                          <button
+                            onClick={() => handleSaveEdit(entry.id)}
+                            disabled={isSaving}
+                            className="flex items-center gap-1.5 text-brand-green hover:text-brand-green/80 text-xs font-semibold tracking-wide transition-colors"
+                          >
+                            {isSaving ? "Saving..." : "Save edits"}
+                          </button>
+                          <span className="text-white/20">•</span>
+                          <button
+                            onClick={handleCancelEdit}
+                            disabled={isSaving}
+                            className="flex items-center gap-1.5 text-white/40 hover:text-white text-xs font-semibold tracking-wide transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* DISPLAY MODE */
+                      <div className="relative">
+                        <div className="flex items-start justify-between gap-4">
+                          <h3
+                            className={`text-xl font-semibold mb-2 tracking-tight ${
+                              entry.isRelapse ? "text-white/90" : "text-white"
+                            }`}
+                          >
+                            {entry.title || "Untitled"}
+                          </h3>
+
+                          {/* Hover Action Menu (Now on the right side) */}
+                          {!isEditing && (
+                            <button
+                              onClick={() => handleStartEdit(entry)}
+                              className="opacity-0 group-hover/block:opacity-100 p-1.5 text-white/30 hover:text-white bg-white/5 hover:bg-white/10 rounded-md transition-all shrink-0 mt-0.5"
+                              title="Edit block"
+                            >
+                              <IconEdit size={16} stroke={1.5} />
+                            </button>
+                          )}
+                        </div>
+
+                        {entry.note && (
+                          <p className="text-white/60 leading-relaxed text-base font-light whitespace-pre-wrap">
+                            {entry.note}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
             {/* Notion-style minimal pagination */}
             {totalPages > 1 && (
-              <div className="pt-8 mt-8 border-t border-white/5 flex items-center justify-between text-sm">
+              <div className="pt-8 mt-4 border-t border-white/5 flex items-center justify-between text-sm">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}

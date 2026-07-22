@@ -22,7 +22,7 @@ export const createCheckIn = async (
     }
 
     // 1. Extract exactly what is in your Prisma schema
-    const { title, note, date } = req.body;
+    const { title, note, date, isRelapse = false } = req.body;
 
     if (!title) {
       res.status(400).json({ error: "A title is required for your check-in." });
@@ -39,6 +39,7 @@ export const createCheckIn = async (
         note: note || "",
         date: checkInDate,
         userId,
+        isRelapse,
       },
     });
 
@@ -88,10 +89,13 @@ export const getStats = async (
   try {
     const userId = req.userId as string;
 
-    // 1. Fetch all check-in dates for this user, ordered newest to oldest
+    // 1. Fetch all check-in dates AND relapse status for this user, ordered newest to oldest
     const checkIns = await prisma.checkIn.findMany({
       where: { userId },
-      select: { date: true },
+      select: {
+        date: true,
+        isRelapse: true, // 👈 CRITICAL FIX: Must explicitly select this field
+      },
       orderBy: { date: "desc" },
     });
 
@@ -111,20 +115,27 @@ export const getStats = async (
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0 || diffDays === 1) {
-        currentStreak = 1;
-        expectedDate = new Date(firstCheckInDate);
+        // SMART LOGIC: If their most recent check-in was a setback, streak is 0.
+        if (checkIns[0].isRelapse) {
+          currentStreak = 0;
+        } else {
+          currentStreak = 1;
+          expectedDate = new Date(firstCheckInDate);
 
-        // Iterate through history to count consecutive days
-        for (let i = 1; i < checkIns.length; i++) {
-          expectedDate.setUTCDate(expectedDate.getUTCDate() - 1);
+          // Iterate through history to count consecutive days
+          for (let i = 1; i < checkIns.length; i++) {
+            // SMART LOGIC: If we hit a historical setback, the streak stops counting here
+            if (checkIns[i].isRelapse) break;
 
-          const nextDate = new Date(checkIns[i].date);
-          nextDate.setUTCHours(0, 0, 0, 0);
+            expectedDate.setUTCDate(expectedDate.getUTCDate() - 1);
+            const nextDate = new Date(checkIns[i].date);
+            nextDate.setUTCHours(0, 0, 0, 0);
 
-          if (nextDate.getTime() === expectedDate.getTime()) {
-            currentStreak++;
-          } else {
-            break;
+            if (nextDate.getTime() === expectedDate.getTime()) {
+              currentStreak++;
+            } else {
+              break;
+            }
           }
         }
       }

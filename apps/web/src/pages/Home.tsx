@@ -12,6 +12,7 @@ import SkeletonLoader from "../components/SkeletonLoader";
 interface CheckInPayload {
   title: string;
   note: string;
+  isRelapse: boolean;
 }
 
 interface UserStats {
@@ -36,7 +37,8 @@ export default function Home() {
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [isRelapse, setIsRelapse] = useState<boolean>(false);
 
   // Fetch stats on mount and after a successful check-in
   const fetchStats = async () => {
@@ -67,7 +69,7 @@ export default function Home() {
     setIsLoading(true);
 
     try {
-      const payload: CheckInPayload = { title, note };
+      const payload: CheckInPayload = { title, note, isRelapse };
       await api.post("/check-ins", payload);
 
       setSuccess(true);
@@ -228,6 +230,29 @@ export default function Home() {
                 rows={4}
                 className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/30 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-all duration-300 resize-none disabled:opacity-50"
               />
+            </div>
+
+            {/* The Setback Toggle */}
+            <div className="pt-2 pb-4 border-b border-white/5">
+              <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={isRelapse}
+                    onChange={(e) => setIsRelapse(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <div className="w-10 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500/80 border border-white/10 transition-colors duration-300"></div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
+                    I experienced a setback today
+                  </span>
+                  <span className="text-[10px] text-white/30">
+                    Be honest. Your notes will help you identify triggers.
+                  </span>
+                </div>
+              </label>
             </div>
 
             <div className="pt-2">
