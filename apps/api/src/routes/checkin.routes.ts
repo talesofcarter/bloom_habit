@@ -3,6 +3,7 @@ import {
   createCheckIn,
   getStats,
   getCheckIns,
+  updateCheckIn,
 } from "../controllers/checkin.controller";
 import { requireAuth } from "../middleware/auth.middleware";
 
@@ -13,5 +14,6 @@ router.use(requireAuth);
 router.post("/", createCheckIn);
 router.get("/stats", getStats);
 router.get("/", getCheckIns);
+router.put("/:id", updateCheckIn);
 
 export default router;

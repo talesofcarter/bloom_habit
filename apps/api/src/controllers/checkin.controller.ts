@@ -151,3 +151,51 @@ export const getStats = async (
     res.status(500).json({ error: "Failed to calculate statistics." });
   }
 };
+
+export const updateCheckIn = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { title, note } = req.body;
+    const userId = req.userId as string;
+
+    // 1. Verify the check-in exists in the database
+    const existingCheckIn = await prisma.checkIn.findUnique({
+      where: { id },
+    });
+
+    if (!existingCheckIn) {
+      res.status(404).json({ error: "Check-in not found." });
+      return;
+    }
+
+    // 2. Security Check: Ensure the user actually owns this check-in
+    if (existingCheckIn.userId !== userId) {
+      res.status(403).json({ error: "Unauthorized to edit this entry." });
+      return;
+    }
+
+    // 3. Validation: Ensure they aren't passing empty strings to wipe their notes
+    if (!title?.trim() || !note?.trim()) {
+      res.status(400).json({ error: "Title and note cannot be empty." });
+      return;
+    }
+
+    // 4. Update the record
+    const updatedCheckIn = await prisma.checkIn.update({
+      where: { id },
+      data: {
+        title: title.trim(),
+        note: note.trim(),
+      },
+    });
+
+    // Return the updated record back to the frontend
+    res.status(200).json(updatedCheckIn);
+  } catch (error) {
+    console.error("Update Check-In Error:", error);
+    res.status(500).json({ error: "Failed to update check-in." });
+  }
+};
