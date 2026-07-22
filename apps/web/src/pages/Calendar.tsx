@@ -2,14 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import { api } from "../lib/api";
 import {
   IconCalendarEvent,
-  IconQuote,
   IconChevronLeft,
   IconChevronRight,
   IconEdit,
-  IconCheck,
-  IconX,
 } from "@tabler/icons-react";
 import { isAxiosError } from "axios";
+import SkeletonLoader from "../components/SkeletonLoader";
 
 interface CheckIn {
   id: string;
@@ -33,7 +31,7 @@ export default function Calendar() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 5;
+  const ITEMS_PER_PAGE = 7; // Increased slightly for the leaner layout
 
   // Calendar Grid State
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -90,13 +88,11 @@ export default function Calendar() {
         note: editNote,
       });
 
-      // Update the local state with the edited data
       setCheckIns((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, ...response.data } : item,
         ),
       );
-
       setEditingId(null);
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response?.data?.error) {
@@ -113,14 +109,12 @@ export default function Calendar() {
     return Array.isArray(checkIns) ? checkIns : [];
   }, [checkIns]);
 
-  // Pagination Logic
   const totalPages = Math.ceil(safeCheckIns.length / ITEMS_PER_PAGE);
   const paginatedCheckIns = safeCheckIns.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
 
-  // Map history dates for the Calendar Grid highlight
   const checkInDateSet = useMemo(() => {
     const dates = new Set<string>();
     safeCheckIns.forEach((entry) => {
@@ -133,7 +127,6 @@ export default function Calendar() {
     return dates;
   }, [safeCheckIns]);
 
-  // Calendar Engine Logic
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -142,301 +135,250 @@ export default function Calendar() {
   const handlePrevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
 
+  // --- Flat, Editorial SkeletonLoader Loader ---
   if (isLoading) {
-    // ... [KEEP YOUR EXISTING SKELETON LOADER HERE EXACTLY AS IT WAS] ...
     return (
-      <div className="space-y-8 max-w-4xl mx-auto pb-12 w-full animate-in fade-in duration-500">
-        <div className="space-y-3 mb-10 text-center md:text-left">
-          <div className="h-10 w-64 bg-white/5 rounded-xl animate-pulse mx-auto md:mx-0"></div>
-          <div className="h-4 w-48 bg-white/5 rounded-md animate-pulse mx-auto md:mx-0"></div>
+      <div className="space-y-12 max-w-3xl mx-auto pb-16 w-full animate-in fade-in duration-500 mt-4">
+        <div className="space-y-3">
+          <SkeletonLoader className="h-10 w-48 rounded-lg" />
+          <SkeletonLoader className="h-4 w-64 rounded-md" />
         </div>
-        <div className="flex flex-col gap-12 w-full">
-          {/* Calendar Skeleton */}
-          <div className="w-full bg-white/2 border border-white/5 rounded-4xl p-6 md:p-8">
-            <div className="flex justify-between items-center mb-8">
-              <div className="h-6 w-32 bg-white/10 rounded-lg animate-pulse"></div>
-              <div className="flex gap-2">
-                <div className="h-8 w-8 bg-white/5 rounded-full animate-pulse"></div>
-                <div className="h-8 w-8 bg-white/5 rounded-full animate-pulse"></div>
-              </div>
-            </div>
-            <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
-              {Array.from({ length: 7 }).map((_, i) => (
-                <div
-                  key={`day-${i}`}
-                  className="h-3 w-full bg-white/5 rounded-sm animate-pulse"
-                ></div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-2 md:gap-4">
-              {Array.from({ length: 35 }).map((_, i) => (
-                <div
-                  key={`grid-${i}`}
-                  className="h-10 md:h-14 bg-white/5 rounded-xl animate-pulse"
-                ></div>
-              ))}
-            </div>
+
+        <div className="border border-white/5 rounded-2xl p-6">
+          <div className="flex justify-between mb-6">
+            <SkeletonLoader className="h-6 w-32 rounded-md" />
+            <SkeletonLoader className="h-6 w-16 rounded-md" />
           </div>
-          {/* Timeline Skeleton */}
-          <div className="w-full relative pl-4 md:pl-8">
-            <div className="absolute left-3.75 md:left-7.75 top-4 bottom-4 w-px bg-white/5"></div>
-            <div className="space-y-8">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={`card-${i}`} className="relative group">
-                  <div className="absolute -left-7 md:-left-11 top-6 w-4 h-4 bg-[#0a0a0a] border-2 border-white/10 rounded-full animate-pulse z-10"></div>
-                  <div className="bg-white/2 border border-white/5 rounded-3xl p-6 md:p-8 ml-4 md:ml-6">
-                    <div className="h-6 w-32 bg-white/10 rounded-lg animate-pulse mb-5"></div>
-                    <div className="h-6 w-3/4 bg-white/10 rounded-md animate-pulse mb-5"></div>
-                    <div className="space-y-3">
-                      <div className="h-3 w-full bg-white/5 rounded-md animate-pulse"></div>
-                      <div className="h-3 w-[90%] bg-white/5 rounded-md animate-pulse"></div>
-                      <div className="h-3 w-[75%] bg-white/5 rounded-md animate-pulse"></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="grid grid-cols-7 gap-2">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <SkeletonLoader key={i} className="h-10 rounded-lg" />
+            ))}
           </div>
+        </div>
+
+        <div className="space-y-10 pl-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="space-y-3 border-l border-white/10 pl-6 py-1"
+            >
+              <SkeletonLoader className="h-4 w-24 rounded-md mb-4" />
+              <SkeletonLoader className="h-6 w-3/4 rounded-md" />
+              <SkeletonLoader className="h-4 w-full rounded-md" />
+              <SkeletonLoader className="h-4 w-5/6 rounded-md" />
+            </div>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out max-w-4xl mx-auto pb-12">
-      {/* Header */}
-      <div className="space-y-2 text-center md:text-left mb-10">
-        <h1 className="text-3xl md:text-4xl font-light text-white tracking-wide">
-          Your <span className="font-medium">Journey</span>.
+    <div className="space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out max-w-3xl mx-auto pb-24 mt-4 w-full">
+      {/* Notion-Style Header */}
+      <div className="space-y-2 border-b border-white/5 pb-8">
+        <h1 className="text-4xl font-semibold text-white tracking-tight">
+          Journey
         </h1>
-        <p className="text-sm text-white/50 tracking-wide">
-          Review your progress and consistency.
+        <p className="text-sm text-white/40 tracking-wide font-light">
+          Your recorded history and daily reflections.
         </p>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium text-center">
+        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium">
           {error}
         </div>
       )}
 
-      {/* Main Layout */}
-      <div className="flex flex-col gap-12 w-full">
-        {/* Top: Calendar Widget */}
-        <div className="w-full bg-white/3 border border-white/10 rounded-4xl p-6 md:p-8 backdrop-blur-xl shadow-2xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <h2 className="text-xl md:text-2xl font-medium text-white tracking-wide">
-              {currentMonth.toLocaleString("default", { month: "long" })} {year}
-            </h2>
-            <div className="flex gap-2">
-              <button
-                onClick={handlePrevMonth}
-                className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white border border-white/10"
-              >
-                <IconChevronLeft size={20} stroke={1.5} />
-              </button>
-              <button
-                onClick={handleNextMonth}
-                className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-colors text-white border border-white/10"
-              >
-                <IconChevronRight size={20} stroke={1.5} />
-              </button>
-            </div>
+      {/* Sleek, Minimal Calendar Grid */}
+      <div className="border border-white/5 rounded-2xl p-6 md:p-8 bg-[#0a0a0a]">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-lg font-medium text-white tracking-wide">
+            {currentMonth.toLocaleString("default", { month: "long" })} {year}
+          </h2>
+          <div className="flex gap-1">
+            <button
+              onClick={handlePrevMonth}
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors text-white/50 hover:text-white"
+            >
+              <IconChevronLeft size={20} stroke={1.5} />
+            </button>
+            <button
+              onClick={handleNextMonth}
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors text-white/50 hover:text-white"
+            >
+              <IconChevronRight size={20} stroke={1.5} />
+            </button>
           </div>
+        </div>
 
-          <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+        <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2">
+          {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+            <div
+              key={i}
+              className="text-center text-[10px] font-semibold text-white/30"
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 md:gap-2">
+          {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+            <div key={`empty-${i}`} className="h-10 md:h-12"></div>
+          ))}
+          {Array.from({ length: daysInMonth }).map((_, i) => {
+            const day = i + 1;
+            const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+            const hasCheckIn = checkInDateSet.has(dateString);
+
+            return (
               <div
                 key={day}
-                className="text-center text-[10px] md:text-xs font-bold uppercase tracking-widest text-white/40"
+                className={`
+                  flex flex-col items-center justify-center h-10 md:h-12 rounded-xl text-sm transition-all duration-300 w-full relative
+                  ${hasCheckIn ? "text-white font-medium bg-white/5" : "text-white/30 hover:bg-white/2"}
+                `}
               >
                 {day}
+                {hasCheckIn && (
+                  <div className="absolute bottom-2 w-1 h-1 rounded-full bg-brand-green"></div>
+                )}
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+      </div>
 
-          <div className="grid grid-cols-7 gap-2 md:gap-4">
-            {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-              <div key={`empty-${i}`} className="h-12 md:h-16 rounded-xl"></div>
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1;
-              const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-              const hasCheckIn = checkInDateSet.has(dateString);
+      {/* Notion-like Timeline */}
+      <div className="relative">
+        {safeCheckIns.length === 0 && !error ? (
+          <div className="text-center py-24 border-t border-white/5">
+            <IconCalendarEvent
+              size={32}
+              className="mx-auto text-white/10 mb-4"
+              stroke={1}
+            />
+            <h3 className="text-white/60 font-medium text-sm">
+              No entries yet
+            </h3>
+          </div>
+        ) : (
+          <div className="space-y-12">
+            {paginatedCheckIns.map((entry) => {
+              const entryDate = entry.date ? new Date(entry.date) : new Date();
+              const isEditing = editingId === entry.id;
 
               return (
                 <div
-                  key={day}
-                  className={`
-                    flex items-center justify-center h-12 md:h-16 rounded-xl text-sm md:text-base font-medium transition-all duration-300 w-full
-                    ${hasCheckIn ? "bg-brand-green/20 text-brand-green border border-brand-green/30 shadow-[0_0_15px_rgba(29,185,84,0.15)]" : "bg-white/2 text-white/40 border border-white/5"}
-                  `}
+                  key={entry.id}
+                  className="group/block relative pl-6 md:pl-8 border-l border-white/10 hover:border-white/20 transition-colors duration-300"
                 >
-                  {day}
+                  {/* Hover Action Menu */}
+                  {!isEditing && (
+                    <div className="absolute -left-4.25 top-0 opacity-0 group-hover/block:opacity-100 transition-opacity bg-[#0a0a0a] py-1">
+                      <button
+                        onClick={() => handleStartEdit(entry)}
+                        className="p-1.5 text-white/30 hover:text-white bg-white/5 hover:bg-white/10 rounded-md border border-white/5"
+                        title="Edit block"
+                      >
+                        <IconEdit size={14} stroke={1.5} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Metadata */}
+                  <div className="text-[11px] font-semibold tracking-widest uppercase text-white/30 mb-3 flex items-center gap-2">
+                    {entryDate.toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </div>
+
+                  {/* EDIT MODE (Borderless, Notion-style inputs) */}
+                  {isEditing ? (
+                    <div className="space-y-3 animate-in fade-in duration-300 -ml-3">
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        disabled={isSaving}
+                        placeholder="Untitled"
+                        className="w-full bg-transparent px-3 py-1 text-xl font-semibold text-white placeholder-white/20 outline-none focus:bg-white/5 rounded-lg transition-colors"
+                        autoFocus
+                      />
+                      <textarea
+                        value={editNote}
+                        onChange={(e) => setEditNote(e.target.value)}
+                        disabled={isSaving}
+                        rows={3}
+                        placeholder="Empty note..."
+                        className="w-full bg-transparent px-3 py-2 text-white/70 text-base font-light leading-relaxed placeholder-white/20 outline-none focus:bg-white/5 rounded-lg resize-none transition-colors"
+                      />
+                      <div className="flex items-center gap-2 pl-3 pt-2">
+                        <button
+                          onClick={() => handleSaveEdit(entry.id)}
+                          disabled={isSaving}
+                          className="flex items-center gap-1.5 text-brand-green hover:text-brand-green/80 text-xs font-semibold tracking-wide transition-colors"
+                        >
+                          {isSaving ? "Saving..." : "Save edits"}
+                        </button>
+                        <span className="text-white/20">•</span>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={isSaving}
+                          className="flex items-center gap-1.5 text-white/40 hover:text-white text-xs font-semibold tracking-wide transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* DISPLAY MODE */
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-2 tracking-tight">
+                        {entry.title || "Untitled"}
+                      </h3>
+                      {entry.note && (
+                        <p className="text-white/60 leading-relaxed text-base font-light whitespace-pre-wrap">
+                          {entry.note}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
-          </div>
 
-          <div className="mt-8 pt-6 border-t border-white/5 flex items-center gap-3">
-            <div className="w-3 h-3 rounded-full bg-brand-green/20 border border-brand-green/30 shadow-[0_0_10px_rgba(29,185,84,0.3)]"></div>
-            <span className="text-xs text-white/50 tracking-wide uppercase font-semibold">
-              Completed Check-in
-            </span>
-          </div>
-        </div>
-
-        {/* Bottom: Notion-like Paginated Timeline */}
-        <div className="w-full relative">
-          {safeCheckIns.length === 0 && !error ? (
-            <div className="text-center py-20 bg-white/3 border border-white/10 rounded-4xl backdrop-blur-xl">
-              <IconCalendarEvent
-                size={48}
-                className="mx-auto text-white/20 mb-4"
-                stroke={1}
-              />
-              <h3 className="text-white text-lg font-medium">No entries yet</h3>
-              <p className="text-white/50 text-sm mt-2">
-                Your journey begins on the Home page.
-              </p>
-            </div>
-          ) : (
-            <div className="relative pl-4 md:pl-8">
-              <div className="absolute left-3.75 md:left-7.75 top-4 bottom-4 w-px bg-linear-to-b from-brand-green/50 via-white/10 to-transparent"></div>
-
-              <div className="space-y-8">
-                {paginatedCheckIns.map((entry, index) => {
-                  const entryDate = entry.date
-                    ? new Date(entry.date)
-                    : new Date();
-                  const isEditing = editingId === entry.id;
-
-                  return (
-                    <div
-                      key={entry.id || `timeline-entry-${index}`}
-                      className="relative group/timeline"
-                    >
-                      {/* Timeline Node */}
-                      <div className="absolute -left-7 md:-left-11 top-6 w-4 h-4 bg-[#0a0a0a] border-2 border-brand-green rounded-full z-10 group-hover/timeline:scale-125 group-hover/timeline:bg-brand-green group-hover/timeline:shadow-[0_0_15px_rgba(29,185,84,0.5)] transition-all duration-300"></div>
-
-                      {/* Content Card */}
-                      <div className="bg-white/3 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl hover:bg-white/5 transition-colors duration-300 ml-4 md:ml-6 group/card relative">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-lg text-brand-green text-xs font-bold tracking-widest uppercase">
-                            {entryDate.toLocaleDateString(undefined, {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </div>
-
-                          {/* Notion-style hidden actions (Visible on hover) */}
-                          {!isEditing && (
-                            <button
-                              onClick={() => handleStartEdit(entry)}
-                              className="opacity-0 group-hover/card:opacity-100 transition-opacity p-2 text-white/40 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg"
-                              title="Edit Note"
-                            >
-                              <IconEdit size={18} stroke={1.5} />
-                            </button>
-                          )}
-                        </div>
-
-                        {/* EDIT MODE */}
-                        {isEditing ? (
-                          <div className="space-y-4 animate-in fade-in duration-300">
-                            <input
-                              type="text"
-                              value={editTitle}
-                              onChange={(e) => setEditTitle(e.target.value)}
-                              disabled={isSaving}
-                              placeholder="Note Title"
-                              className="w-full bg-black/20 border border-brand-green/30 focus:border-brand-green rounded-xl px-4 py-3 text-xl font-medium text-white placeholder-white/30 outline-none transition-all disabled:opacity-50"
-                            />
-                            <textarea
-                              value={editNote}
-                              onChange={(e) => setEditNote(e.target.value)}
-                              disabled={isSaving}
-                              rows={4}
-                              placeholder="Write your reflection..."
-                              className="w-full bg-black/20 border border-brand-green/30 focus:border-brand-green rounded-xl px-4 py-3 text-white/70 leading-relaxed text-sm md:text-base font-light placeholder-white/30 outline-none resize-none transition-all disabled:opacity-50"
-                            />
-                            <div className="flex items-center gap-3 pt-2">
-                              <button
-                                onClick={() => handleSaveEdit(entry.id)}
-                                disabled={isSaving}
-                                className="flex items-center gap-2 bg-brand-green hover:bg-brand-green-hover text-black font-semibold text-xs tracking-widest uppercase px-5 py-2.5 rounded-lg transition-all disabled:opacity-50"
-                              >
-                                {isSaving ? (
-                                  "Saving..."
-                                ) : (
-                                  <>
-                                    <IconCheck size={16} stroke={2} /> Save
-                                  </>
-                                )}
-                              </button>
-                              <button
-                                onClick={handleCancelEdit}
-                                disabled={isSaving}
-                                className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white font-semibold text-xs tracking-widest uppercase px-5 py-2.5 rounded-lg transition-all disabled:opacity-50"
-                              >
-                                <IconX size={16} stroke={1.5} /> Cancel
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          /* DISPLAY MODE */
-                          <div>
-                            <h3 className="text-xl font-medium text-white mb-3">
-                              {entry.title || "Untitled Entry"}
-                            </h3>
-                            {entry.note && (
-                              <div className="flex gap-4 items-start">
-                                <IconQuote
-                                  size={24}
-                                  className="text-white/20 shrink-0 mt-1"
-                                  stroke={1.5}
-                                />
-                                <p className="text-white/70 leading-relaxed text-sm md:text-base font-light whitespace-pre-wrap">
-                                  {entry.note}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+            {/* Notion-style minimal pagination */}
+            {totalPages > 1 && (
+              <div className="pt-8 mt-8 border-t border-white/5 flex items-center justify-between text-sm">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="text-white/40 hover:text-white disabled:opacity-20 transition-colors font-medium"
+                >
+                  &larr; Newer
+                </button>
+                <span className="text-white/30 text-xs font-medium">
+                  {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="text-white/40 hover:text-white disabled:opacity-20 transition-colors font-medium"
+                >
+                  Older &rarr;
+                </button>
               </div>
-
-              {/* Scalable Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="mt-12 ml-4 md:ml-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/3 border border-white/10 rounded-2xl p-4 backdrop-blur-xl">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="flex items-center justify-center px-6 py-3 w-full sm:w-auto text-sm font-semibold tracking-wide text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/5"
-                  >
-                    Previous
-                  </button>
-                  <span className="text-xs font-semibold tracking-widest text-white/50 uppercase">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="flex items-center justify-center px-6 py-3 w-full sm:w-auto text-sm font-semibold tracking-wide text-white bg-white/5 hover:bg-white/10 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-white/5"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
