@@ -8,7 +8,9 @@ import {
   IconCalendarEvent,
 } from "@tabler/icons-react";
 import SkeletonLoader from "../components/SkeletonLoader";
+import InlineNotice from "../components/InlineNotice";
 import Toggle from "../components/Toggle";
+import BibleVerseCard from "../components/BibleVerseCard";
 
 interface CheckInPayload {
   title: string;
@@ -41,7 +43,6 @@ export default function Home() {
   const [success, setSuccess] = useState<boolean>(false);
   const [isRelapse, setIsRelapse] = useState<boolean>(false);
 
-  // Fetch stats on mount and after a successful check-in
   const fetchStats = async () => {
     try {
       const response = await api.get<UserStats>("/check-ins/stats");
@@ -76,7 +77,6 @@ export default function Home() {
       setSuccess(true);
       setTitle("");
       setNote("");
-      // Instantly refresh the stats above to show the new streak!
       fetchStats();
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response) {
@@ -104,43 +104,46 @@ export default function Home() {
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Streak Card */}
-        <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-orange-500/20 transition-all"></div>
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
-            <IconFlame size={24} className="text-orange-400" stroke={1.5} />
+        <div className="group bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-white/15">
+          <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-500/8 rounded-full blur-[60px] pointer-events-none group-hover:bg-orange-500/15 transition-all duration-500" />
+          <div className="w-11 h-11 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0 relative z-10">
+            <IconFlame size={20} className="text-orange-400" stroke={1.75} />
           </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
+          <div className="flex-1 relative z-10">
+            <p className="text-[10px] font-semibold tracking-[0.18em] text-white/40 uppercase mb-1.5">
               Current Streak
             </p>
             {isStatsLoading ? (
-              <SkeletonLoader className="h-8 w-24 rounded-lg" />
+              <SkeletonLoader className="h-7 w-20 rounded-lg" />
             ) : (
-              <p className="text-2xl font-light text-white">
-                {stats.currentStreak} Days
+              <p className="text-2xl font-light text-white tracking-tight">
+                {stats.currentStreak}{" "}
+                <span className="text-sm text-white/40">
+                  {stats.currentStreak === 1 ? "day" : "days"}
+                </span>
               </p>
             )}
           </div>
         </div>
 
         {/* Total Check-ins Card */}
-        <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-brand-green/10 rounded-full blur-2xl pointer-events-none group-hover:bg-brand-green/20 transition-all"></div>
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
+        <div className="group bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-white/15">
+          <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-green/8 rounded-full blur-[60px] pointer-events-none group-hover:bg-brand-green/15 transition-all duration-500" />
+          <div className="w-11 h-11 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0 relative z-10">
             <IconCircleCheck
-              size={24}
+              size={20}
               className="text-brand-green"
-              stroke={1.5}
+              stroke={1.75}
             />
           </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
+          <div className="flex-1 relative z-10">
+            <p className="text-[10px] font-semibold tracking-[0.18em] text-white/40 uppercase mb-1.5">
               Total Check-Ins
             </p>
             {isStatsLoading ? (
-              <SkeletonLoader className="h-8 w-16 rounded-lg" />
+              <SkeletonLoader className="h-7 w-14 rounded-lg" />
             ) : (
-              <p className="text-2xl font-light text-white">
+              <p className="text-2xl font-light text-white tracking-tight">
                 {stats.totalCheckIns}
               </p>
             )}
@@ -148,47 +151,49 @@ export default function Home() {
         </div>
 
         {/* Last Check-in Card */}
-        <div className="bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden group hover:bg-white/5 transition-all duration-300">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-blue-500/20 transition-all"></div>
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0">
+        <div className="group bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-white/15">
+          <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/8 rounded-full blur-[60px] pointer-events-none group-hover:bg-blue-500/15 transition-all duration-500" />
+          <div className="w-11 h-11 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0 relative z-10">
             <IconCalendarEvent
-              size={24}
+              size={20}
               className="text-blue-400"
-              stroke={1.5}
+              stroke={1.75}
             />
           </div>
-          <div className="flex-1">
-            <p className="text-xs font-semibold tracking-widest text-white/50 uppercase mb-1">
+          <div className="flex-1 relative z-10">
+            <p className="text-[10px] font-semibold tracking-[0.18em] text-white/40 uppercase mb-1.5">
               Last Entry
             </p>
             {isStatsLoading ? (
-              <SkeletonLoader className="h-5 w-28 rounded-md mt-1.5" />
+              <SkeletonLoader className="h-7 w-24 rounded-lg" />
             ) : (
-              <p className="text-sm font-medium text-white mt-1">
+              <p className="text-2xl font-light text-white tracking-tight">
                 {stats.lastCheckIn
                   ? new Date(stats.lastCheckIn).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
-                      year: "numeric",
                     })
-                  : "Never"}
+                  : "—"}
               </p>
             )}
           </div>
         </div>
       </div>
 
+      {/* Verse of the Day */}
+      <BibleVerseCard />
+
       {/* Check-In Form */}
       <div className="bg-white/3 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-green/10 rounded-full blur-[80px] pointer-events-none"></div>
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-green/8 rounded-full blur-[90px] pointer-events-none" />
 
-        <h2 className="text-lg font-medium text-white mb-6 flex items-center gap-2">
+        <h2 className="text-lg font-medium text-white mb-6 flex items-center gap-2 relative z-10">
           Daily Check-In
-          <div className="h-px bg-white/10 flex-1 ml-4"></div>
+          <div className="h-px bg-white/10 flex-1 ml-4" />
         </h2>
 
         {success ? (
-          <div className="bg-brand-green/10 border border-brand-green/20 rounded-2xl p-8 text-center space-y-3">
+          <div className="relative z-10 bg-brand-green/10 border border-brand-green/20 rounded-2xl p-8 text-center space-y-3">
             <div className="w-12 h-12 bg-brand-green/20 rounded-full flex items-center justify-center mx-auto mb-4 text-brand-green">
               <IconCircleCheck size={24} stroke={2} />
             </div>
@@ -199,17 +204,17 @@ export default function Home() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
-            {error && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium tracking-wide">
-                {error}
-              </div>
-            )}
+            {error && <InlineNotice variant="notice">{error}</InlineNotice>}
 
             <div>
-              <label className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
+              <label
+                htmlFor="checkin-title"
+                className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2"
+              >
                 Title
               </label>
               <input
+                id="checkin-title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -220,20 +225,23 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2">
+              <label
+                htmlFor="checkin-note"
+                className="block text-xs font-semibold tracking-widest text-white/70 uppercase mb-2"
+              >
                 Notes
               </label>
               <textarea
+                id="checkin-note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 disabled={isLoading}
-                placeholder="Reflect on your day, your triggers, or your victories..."
+                placeholder="Reflect on your day, your triggers, or your victories…"
                 rows={4}
                 className="w-full bg-black/20 border border-white/10 rounded-xl px-5 py-4 text-white placeholder-white/30 focus:outline-none focus:border-brand-green focus:ring-1 focus:ring-brand-green transition-all duration-300 resize-none disabled:opacity-50"
               />
             </div>
 
-            {/* The Setback Toggle */}
             <div className="pt-2 pb-4 border-b border-white/5">
               <Toggle
                 checked={isRelapse}
@@ -249,7 +257,7 @@ export default function Home() {
                 disabled={isLoading}
                 className="bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest uppercase text-xs px-8 py-4 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(29,185,84,0.15)] hover:shadow-[0_0_25px_rgba(29,185,84,0.3)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Saving..." : "Submit Check-In"}
+                {isLoading ? "Saving…" : "Submit Check-In"}
               </button>
             </div>
           </form>
