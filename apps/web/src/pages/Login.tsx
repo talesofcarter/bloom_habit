@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { isAxiosError } from "axios";
 import AuthLayout from "../components/AuthLayout";
+import InlineNotice from "../components/InlineNotice";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -45,14 +46,7 @@ export default function Login() {
           </p>
         </div>
 
-        {error && (
-          <div
-            role="alert"
-            className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center font-medium tracking-wide"
-          >
-            {error}
-          </div>
-        )}
+        {error && <InlineNotice variant="notice">{error}</InlineNotice>}
 
         <form className="space-y-4" onSubmit={handleSubmit} noValidate>
           <div>

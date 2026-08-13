@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { isAxiosError } from "axios";
 import SkeletonLoader from "../components/SkeletonLoader";
+import InlineNotice from "../components/InlineNotice";
 
 interface CheckIn {
   id: string;
@@ -19,12 +20,9 @@ interface CheckIn {
 }
 
 export default function Calendar() {
-  // Data State
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Edit State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editNote, setEditNote] = useState("");
@@ -187,13 +185,13 @@ export default function Calendar() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium">
+        <InlineNotice variant="notice" className="text-sm">
           {error}
-        </div>
+        </InlineNotice>
       )}
 
       {/* Sleek, Minimal Calendar Grid */}
-      <div className="border border-white/5 rounded-2xl p-6 md:p-8 bg-[#0a0a0a]">
+      <div className="border border-white/5 rounded-2xl p-6 md:p-8 bg-bg-base">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-lg font-medium text-white tracking-wide">
             {currentMonth.toLocaleString("default", { month: "long" })} {year}
@@ -282,7 +280,7 @@ export default function Calendar() {
                   >
                     {/* Timeline Node (The dot on the line) */}
                     <div
-                      className={`absolute -left-[5.5px] top-1.5 w-2.5 h-2.5 rounded-full border-[1.5px] bg-[#0a0a0a] z-10 transition-all duration-300 ${
+                      className={`absolute left-[-5.5px] top-1.5 w-2.5 h-2.5 rounded-full border-[1.5px] bg-bg-base z-10 transition-all duration-300 ${
                         entry.isRelapse
                           ? "border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]"
                           : "border-white/20 group-hover/block:border-brand-green group-hover/block:shadow-[0_0_10px_rgba(29,185,84,0.4)]"

@@ -6,10 +6,10 @@ import {
   IconUser,
   IconShieldLock,
   IconTrash,
-  IconCheck,
   IconX,
 } from "@tabler/icons-react";
 import PasswordField from "../components/PasswordField";
+import InlineNotice from "../components/InlineNotice";
 
 export default function Settings() {
   const { user } = useAuth();
@@ -192,9 +192,9 @@ export default function Settings() {
                   </div>
 
                   {passwordError && (
-                    <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-lg">
+                    <InlineNotice variant="notice">
                       {passwordError}
-                    </div>
+                    </InlineNotice>
                   )}
 
                   <div className="space-y-3">
@@ -236,9 +236,12 @@ export default function Settings() {
                       {isSavingPassword ? "Saving..." : "Confirm Change"}
                     </button>
                     {passwordSuccess && (
-                      <span className="text-brand-green text-xs font-medium flex items-center gap-1 animate-in fade-in">
-                        <IconCheck size={16} /> Updated
-                      </span>
+                      <InlineNotice
+                        variant="success"
+                        className="p-0! bg-transparent! border-0!"
+                      >
+                        Updated
+                      </InlineNotice>
                     )}
                   </div>
                 </form>
