@@ -8,44 +8,29 @@ import {
   IconTrash,
   IconCheck,
   IconX,
-  IconEye,
-  IconEyeOff,
 } from "@tabler/icons-react";
+import PasswordField from "../components/PasswordField";
 
 export default function Settings() {
   const { user } = useAuth();
-
-  // Profile State
   const [name, setName] = useState(user?.name || "");
-
-  // Password State
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState(""); // <-- New State
-
-  // Password Visibility State
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
-
-  // Danger Zone State
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // --- Handlers ---
-
   const handleUpdatePassword = async (e: FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
     setPasswordSuccess(false);
 
-    // Frontend Validation: Ensure passwords match before hitting the API
     if (newPassword !== confirmPassword) {
       setPasswordError("Your new passwords do not match.");
       return;
@@ -66,9 +51,6 @@ export default function Settings() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      setShowCurrent(false);
-      setShowNew(false);
-      setShowConfirm(false);
 
       setTimeout(() => {
         setIsEditingPassword(false);
@@ -116,7 +98,7 @@ export default function Settings() {
 
       <div className="space-y-8">
         {/* PROFILE SECTION */}
-        <section className="bg-white/3 border border-white/10 rounded-[2rem] p-6 md:p-8 backdrop-blur-xl relative overflow-hidden">
+        <section className="bg-white/3 border border-white/10 rounded-4xl p-6 md:p-8 backdrop-blur-xl relative overflow-hidden">
           <div className="absolute -right-24 -top-24 w-48 h-48 bg-brand-green/5 rounded-full blur-[80px] pointer-events-none"></div>
 
           <div className="flex items-center gap-4 mb-8">
@@ -157,7 +139,7 @@ export default function Settings() {
         </section>
 
         {/* SECURITY & DANGER ZONE SECTION */}
-        <section className="bg-white/3 border border-white/10 rounded-[2rem] p-6 md:p-8 backdrop-blur-xl relative overflow-hidden">
+        <section className="bg-white/3 border border-white/10 rounded-4xl p-6 md:p-8 backdrop-blur-xl relative overflow-hidden">
           <div className="absolute -right-24 -bottom-24 w-48 h-48 bg-red-500/5 rounded-full blur-[80px] pointer-events-none"></div>
 
           <div className="flex items-center gap-4 mb-8">
@@ -217,73 +199,27 @@ export default function Settings() {
 
                   <div className="space-y-3">
                     {/* Current Password Field */}
-                    <div className="relative">
-                      <input
-                        type={showCurrent ? "text" : "password"}
-                        required
-                        placeholder="Current Password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white text-sm focus:outline-none focus:border-brand-green"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrent(!showCurrent)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors focus:outline-none"
-                      >
-                        {showCurrent ? (
-                          <IconEyeOff size={18} />
-                        ) : (
-                          <IconEye size={18} />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* New Password Field */}
-                    <div className="relative">
-                      <input
-                        type={showNew ? "text" : "password"}
-                        required
-                        placeholder="New Password (min 8 characters)"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white text-sm focus:outline-none focus:border-brand-green"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNew(!showNew)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors focus:outline-none"
-                      >
-                        {showNew ? (
-                          <IconEyeOff size={18} />
-                        ) : (
-                          <IconEye size={18} />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Confirm Password Field */}
-                    <div className="relative">
-                      <input
-                        type={showConfirm ? "text" : "password"}
-                        required
-                        placeholder="Confirm New Password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-white text-sm focus:outline-none focus:border-brand-green"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirm(!showConfirm)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors focus:outline-none"
-                      >
-                        {showConfirm ? (
-                          <IconEyeOff size={18} />
-                        ) : (
-                          <IconEye size={18} />
-                        )}
-                      </button>
-                    </div>
+                    <PasswordField
+                      id="current-password"
+                      value={currentPassword}
+                      onChange={setCurrentPassword}
+                      placeholder="Current Password"
+                      autoComplete="current-password"
+                    />
+                    <PasswordField
+                      id="new-password"
+                      value={newPassword}
+                      onChange={setNewPassword}
+                      placeholder="New Password (min 8 characters)"
+                      autoComplete="new-password"
+                    />
+                    <PasswordField
+                      id="confirm-password"
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      placeholder="Confirm New Password"
+                      autoComplete="new-password"
+                    />
                   </div>
 
                   <div className="pt-2 flex items-center gap-4">

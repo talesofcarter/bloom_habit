@@ -8,6 +8,7 @@ import {
   IconCalendarEvent,
 } from "@tabler/icons-react";
 import SkeletonLoader from "../components/SkeletonLoader";
+import Toggle from "../components/Toggle";
 
 interface CheckInPayload {
   title: string;
@@ -234,25 +235,12 @@ export default function Home() {
 
             {/* The Setback Toggle */}
             <div className="pt-2 pb-4 border-b border-white/5">
-              <label className="flex items-center gap-3 cursor-pointer group w-fit">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={isRelapse}
-                    onChange={(e) => setIsRelapse(e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <div className="w-10 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500/80 border border-white/10 transition-colors duration-300"></div>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-white/70 group-hover:text-white transition-colors">
-                    I experienced a setback today
-                  </span>
-                  <span className="text-[10px] text-white/30">
-                    Be honest. Your notes will help you identify triggers.
-                  </span>
-                </div>
-              </label>
+              <Toggle
+                checked={isRelapse}
+                onChange={setIsRelapse}
+                label="I experienced a setback today"
+                helperText="Be honest. Your notes will help you identify triggers."
+              />
             </div>
 
             <div className="pt-2">
