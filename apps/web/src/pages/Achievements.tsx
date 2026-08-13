@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "../lib/api";
 import type { StatsData } from "../types/stats";
 import Badge from "../components/Badge";
+import SkeletonLoader from "../components/SkeletonLoader";
 import confetti from "canvas-confetti";
 
 export default function Achievements() {
@@ -66,40 +67,36 @@ export default function Achievements() {
     fetchStats();
   }, []);
 
-  // --- Premium Skeleton Loader ---
+  // Skeleton Loader
   if (isLoading) {
     return (
       <div className="space-y-8 max-w-5xl mx-auto pb-12 w-full animate-in fade-in duration-500">
-        {/* Header Skeleton */}
         <div className="space-y-3 mb-10 text-center md:text-left">
-          <div className="h-10 w-64 bg-white/5 rounded-xl animate-pulse mx-auto md:mx-0"></div>
-          <div className="h-4 w-48 bg-white/5 rounded-md animate-pulse mx-auto md:mx-0"></div>
+          <SkeletonLoader className="h-10 w-64 rounded-xl mx-auto md:mx-0" />
+          <SkeletonLoader className="h-4 w-48 rounded-md mx-auto md:mx-0" />
         </div>
 
-        {/* Streak Highlight Card Skeleton */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/2 border border-white/5 p-6 md:p-8 rounded-4xl">
           <div className="space-y-3 w-full sm:w-auto flex flex-col items-center sm:items-start">
-            <div className="h-6 w-32 bg-white/10 rounded-lg animate-pulse"></div>
-            <div className="h-4 w-48 bg-white/5 rounded-md animate-pulse"></div>
+            <SkeletonLoader className="h-6 w-32 rounded-lg" />
+            <SkeletonLoader className="h-4 w-48 rounded-md" />
           </div>
-          <div className="h-14 w-32 bg-white/10 rounded-2xl animate-pulse shrink-0"></div>
+          <SkeletonLoader className="h-14 w-32 rounded-2xl shrink-0" />
         </div>
 
-        {/* Badges Grid Skeleton */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* We generate 6 empty cards to match the visual weight of the real grid */}
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={`badge-skeleton-${i}`}
               className="p-4 rounded-2xl border border-white/5 bg-white/2"
             >
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-5 h-5 rounded-full bg-white/10 animate-pulse shrink-0"></div>
-                <div className="h-5 w-24 bg-white/10 rounded-lg animate-pulse"></div>
+                <SkeletonLoader className="w-5 h-5 rounded-full shrink-0" />
+                <SkeletonLoader className="h-5 w-24 rounded-lg" />
               </div>
               <div className="space-y-2">
-                <div className="h-3 w-full bg-white/5 rounded-md animate-pulse"></div>
-                <div className="h-3 w-2/3 bg-white/5 rounded-md animate-pulse"></div>
+                <SkeletonLoader className="h-3 w-full rounded-md" />
+                <SkeletonLoader className="h-3 w-2/3 rounded-md" />
               </div>
             </div>
           ))}
@@ -116,7 +113,7 @@ export default function Achievements() {
     );
   }
 
-  // --- Actual Rendered Content ---
+  // Content
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out max-w-5xl mx-auto pb-12">
       {/* Header */}
