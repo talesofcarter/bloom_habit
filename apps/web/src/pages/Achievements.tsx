@@ -117,27 +117,26 @@ export default function Achievements() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out max-w-5xl mx-auto pb-12">
       {/* Header */}
-      <div className="space-y-2 text-center md:text-left mb-10">
-        <h1 className="text-3xl md:text-4xl font-light text-white tracking-wide">
+      <div className="space-y-2.5 text-center md:text-left border-b border-white/5 pb-8 mb-2">
+        <h1 className="text-3xl md:text-4xl font-light text-white tracking-tight">
           Your <span className="font-medium">Achievements</span>.
         </h1>
-        <p className="text-sm text-white/50 tracking-wide">
+        <p className="text-sm text-white/40 tracking-wide font-light">
           Every day is a victory. Watch your progress bloom.
         </p>
       </div>
 
       {/* Streak Highlight Card */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-white/3 border border-white/10 p-6 md:p-8 rounded-4xl backdrop-blur-xl relative overflow-hidden">
-        {/*  background  */}
         <div className="absolute -right-24 -top-24 w-48 h-48 bg-brand-green/10 rounded-full blur-[80px] pointer-events-none"></div>
 
-        <div>
-          <h3 className="text-lg md:text-xl text-white font-medium tracking-wide">
+        <div className="text-center sm:text-left">
+          <p className="text-[10px] font-semibold tracking-[0.2em] text-white/30 uppercase mb-1.5">
             Current Streak
-          </h3>
-          <p className="text-xs text-white/50 mt-1">
-            Total lifetime check-ins: {stats.totalCheckIns}
           </p>
+          <h3 className="text-lg md:text-xl text-white font-medium tracking-wide">
+            {stats.totalCheckIns} lifetime check-ins
+          </h3>
         </div>
 
         <div className="flex items-center gap-2 px-6 py-3 bg-brand-green/10 border border-brand-green/20 rounded-2xl shadow-[0_0_20px_rgba(29,185,84,0.15)] relative z-10">

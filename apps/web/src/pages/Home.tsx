@@ -7,10 +7,10 @@ import {
   IconCircleCheck,
   IconCalendarEvent,
 } from "@tabler/icons-react";
-import SkeletonLoader from "../components/SkeletonLoader";
 import InlineNotice from "../components/InlineNotice";
 import Toggle from "../components/Toggle";
 import BibleVerseCard from "../components/BibleVerseCard";
+import StatCard from "../components/StatCard";
 
 interface CheckInPayload {
   title: string;
@@ -27,7 +27,6 @@ interface UserStats {
 export default function Home() {
   const { user } = useAuth();
 
-  // Stats State
   const [stats, setStats] = useState<UserStats>({
     totalCheckIns: 0,
     currentStreak: 0,
@@ -35,7 +34,6 @@ export default function Home() {
   });
   const [isStatsLoading, setIsStatsLoading] = useState(true);
 
-  // Form State
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -90,94 +88,56 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl md:text-4xl font-light text-white tracking-wide">
+      <div className="space-y-2.5 border-b border-white/5 pb-8">
+        <h1 className="text-3xl md:text-4xl font-light text-white tracking-tight">
           Welcome back, <span className="font-medium">{user?.name}</span>.
         </h1>
-        <p className="text-sm text-white/50 tracking-wide">
+        <p className="text-sm text-white/40 tracking-wide font-light">
           Consistency is the path to recovery.
         </p>
       </div>
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Streak Card */}
-        <div className="group bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-white/15">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-500/8 rounded-full blur-[60px] pointer-events-none group-hover:bg-orange-500/15 transition-all duration-500" />
-          <div className="w-11 h-11 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0 relative z-10">
-            <IconFlame size={20} className="text-orange-400" stroke={1.75} />
-          </div>
-          <div className="flex-1 relative z-10">
-            <p className="text-[10px] font-semibold tracking-[0.18em] text-white/40 uppercase mb-1.5">
-              Current Streak
-            </p>
-            {isStatsLoading ? (
-              <SkeletonLoader className="h-7 w-20 rounded-lg" />
-            ) : (
-              <p className="text-2xl font-light text-white tracking-tight">
-                {stats.currentStreak}{" "}
-                <span className="text-sm text-white/40">
-                  {stats.currentStreak === 1 ? "day" : "days"}
-                </span>
-              </p>
-            )}
-          </div>
-        </div>
+        <StatCard
+          label="Current Streak"
+          icon={IconFlame}
+          iconColorClass="text-orange-400"
+          glowColorClass="bg-orange-500/8 group-hover:bg-orange-500/15"
+          isLoading={isStatsLoading}
+        >
+          {stats.currentStreak}{" "}
+          <span className="text-sm text-white/40">
+            {stats.currentStreak === 1 ? "day" : "days"}
+          </span>
+        </StatCard>
 
-        {/* Total Check-ins Card */}
-        <div className="group bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-white/15">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-brand-green/8 rounded-full blur-[60px] pointer-events-none group-hover:bg-brand-green/15 transition-all duration-500" />
-          <div className="w-11 h-11 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0 relative z-10">
-            <IconCircleCheck
-              size={20}
-              className="text-brand-green"
-              stroke={1.75}
-            />
-          </div>
-          <div className="flex-1 relative z-10">
-            <p className="text-[10px] font-semibold tracking-[0.18em] text-white/40 uppercase mb-1.5">
-              Total Check-Ins
-            </p>
-            {isStatsLoading ? (
-              <SkeletonLoader className="h-7 w-14 rounded-lg" />
-            ) : (
-              <p className="text-2xl font-light text-white tracking-tight">
-                {stats.totalCheckIns}
-              </p>
-            )}
-          </div>
-        </div>
+        <StatCard
+          label="Total Check-Ins"
+          icon={IconCircleCheck}
+          iconColorClass="text-brand-green"
+          glowColorClass="bg-brand-green/8 group-hover:bg-brand-green/15"
+          isLoading={isStatsLoading}
+        >
+          {stats.totalCheckIns}
+        </StatCard>
 
-        {/* Last Check-in Card */}
-        <div className="group bg-white/3 border border-white/10 rounded-3xl p-6 backdrop-blur-xl flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:bg-white/5 hover:border-white/15">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/8 rounded-full blur-[60px] pointer-events-none group-hover:bg-blue-500/15 transition-all duration-500" />
-          <div className="w-11 h-11 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shrink-0 relative z-10">
-            <IconCalendarEvent
-              size={20}
-              className="text-blue-400"
-              stroke={1.75}
-            />
-          </div>
-          <div className="flex-1 relative z-10">
-            <p className="text-[10px] font-semibold tracking-[0.18em] text-white/40 uppercase mb-1.5">
-              Last Entry
-            </p>
-            {isStatsLoading ? (
-              <SkeletonLoader className="h-7 w-24 rounded-lg" />
-            ) : (
-              <p className="text-2xl font-light text-white tracking-tight">
-                {stats.lastCheckIn
-                  ? new Date(stats.lastCheckIn).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })
-                  : "—"}
-              </p>
-            )}
-          </div>
-        </div>
+        <StatCard
+          label="Last Entry"
+          icon={IconCalendarEvent}
+          iconColorClass="text-blue-400"
+          glowColorClass="bg-blue-500/8 group-hover:bg-blue-500/15"
+          isLoading={isStatsLoading}
+        >
+          {stats.lastCheckIn
+            ? new Date(stats.lastCheckIn).toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+              })
+            : "—"}
+        </StatCard>
       </div>
 
       {/* Verse of the Day */}
@@ -187,7 +147,7 @@ export default function Home() {
       <div className="bg-white/3 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-green/8 rounded-full blur-[90px] pointer-events-none" />
 
-        <h2 className="text-lg font-medium text-white mb-6 flex items-center gap-2 relative z-10">
+        <h2 className="text-lg font-medium text-white mb-8 flex items-center gap-2 relative z-10">
           Daily Check-In
           <div className="h-px bg-white/10 flex-1 ml-4" />
         </h2>
@@ -203,7 +163,7 @@ export default function Home() {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+          <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
             {error && <InlineNotice variant="notice">{error}</InlineNotice>}
 
             <div>
@@ -242,7 +202,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="pt-2 pb-4 border-b border-white/5">
+            <div className="pt-1 pb-5 border-b border-white/5">
               <Toggle
                 checked={isRelapse}
                 onChange={setIsRelapse}
@@ -251,7 +211,7 @@ export default function Home() {
               />
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="submit"
                 disabled={isLoading}
