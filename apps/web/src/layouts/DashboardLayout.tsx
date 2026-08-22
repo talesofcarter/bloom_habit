@@ -10,6 +10,7 @@ import {
   IconX,
   IconTrophy,
   IconChevronsLeft,
+  IconBook2,
 } from "@tabler/icons-react";
 import LogoMark from "../components/LogoMark";
 
@@ -39,6 +40,7 @@ export default function DashboardLayout() {
   const navItems = [
     { name: "Home", path: "/", icon: IconHome },
     { name: "Progress", path: "/calendar", icon: IconCalendar },
+    { name: "Library", path: "/verses", icon: IconBook2 },
     { name: "Achievements", path: "/achievements", icon: IconTrophy },
     { name: "Settings", path: "/settings", icon: IconSettings },
   ];

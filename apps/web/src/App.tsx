@@ -7,6 +7,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Home from "./pages/Home";
 import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
+import Verses from "./pages/Verses";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route index element={<Home />} />
             <Route path="/achievements" element={<Achievements />} />
+            <Route path="/verses" element={<Verses />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
