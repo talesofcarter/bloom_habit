@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes";
 import checkInRoutes from "./routes/checkin.routes";
 import userRoutes from "./routes/user.routes";
+import verseRoutes from "./routes/verse.routes";
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/check-ins", checkInRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/verses", verseRoutes);
 
 app.listen(PORT, () => {
   console.log(

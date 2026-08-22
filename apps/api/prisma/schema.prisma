@@ -35,3 +35,15 @@ model CheckIn {
   @@index([userId, date])
   @@map("check_ins")
 }
+
+model Verse {
+  id        String   @id @default(cuid())
+  date      DateTime @db.Date @unique
+  ampText   String   @db.Text
+  ampRef    String
+  nivText   String   @db.Text
+  nivRef    String
+  createdAt DateTime @default(now())
+
+  @@map("verses")
+}
