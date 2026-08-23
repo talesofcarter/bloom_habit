@@ -57,98 +57,47 @@ function extractJson(raw: string): string {
   return raw.replace(/```json\s*|```/g, "").trim();
 }
 
-let requestCounter = 0;
-
-// Small structured logger so every line for a given call is easy to
-// visually group in the terminal, even if requests overlap.
-function makeLogger(requestId: string) {
-  const prefix = `[llm:${requestId}]`;
-  return {
-    info: (msg: string, ...rest: unknown[]) =>
-      console.log(`${prefix} ${msg}`, ...rest),
-    warn: (msg: string, ...rest: unknown[]) =>
-      console.warn(`${prefix} ${msg}`, ...rest),
-    error: (msg: string, ...rest: unknown[]) =>
-      console.error(`${prefix} ${msg}`, ...rest),
-  };
-}
-
 export async function generateDailyVerse(
   recentReferences: string[] = [],
 ): Promise<GeneratedVerse> {
-  const requestId = `req_${Date.now()}_${++requestCounter}`;
-  const log = makeLogger(requestId);
-  const startedAt = Date.now();
-
-  log.info("── Verse generation started ──────────────────────────");
-  log.info(`Target model : ${MODEL_ID}`);
-  log.info(`Endpoint     : ${API_URL}`);
-  log.info(
-    `Avoiding     : ${recentReferences.length > 0 ? recentReferences.join(", ") : "(no recent references)"}`,
-  );
-
   const apiKey = process.env.HF_TOKEN;
 
   if (!apiKey) {
-    log.warn("HF_TOKEN is not set in the environment.");
-    log.warn("Skipping network call — returning fallback verse.");
-    const fallback = pickFallback();
-    log.info(`Fallback selected: "${fallback.amp.reference}"`);
-    log.info("── Verse generation ended (no network call) ─────────");
-    return fallback;
+    console.warn("HF_TOKEN not set — using fallback verse.");
+    return pickFallback();
   }
 
-  const userPrompt = buildUserPrompt(recentReferences);
-  const requestBody = {
-    model: MODEL_ID,
-    temperature: 0.9,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userPrompt },
-    ],
-  };
-
-  log.info(`HF_TOKEN present, ending in: ...${apiKey.slice(-4)}`);
-  log.info(`User prompt  : "${userPrompt}"`);
-  log.info("Dispatching request to Hugging Face router...");
-
   try {
-    const dispatchedAt = Date.now();
-
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        model: MODEL_ID,
+        temperature: 0.9,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: buildUserPrompt(recentReferences) },
+        ],
+      }),
     });
-
-    const roundTripMs = Date.now() - dispatchedAt;
-    log.info(`Response received in ${roundTripMs}ms`);
-    log.info(`HTTP status  : ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
       const errorBody = await response.text();
-      log.error(`Request rejected by Hugging Face.`);
-      log.error(`Response body: ${errorBody}`);
+      console.error(
+        `LLM request failed with status ${response.status}:`,
+        errorBody,
+      );
       throw new Error(`LLM request failed with status ${response.status}`);
     }
 
     const data = await response.json();
-    log.info("Response parsed as JSON successfully.");
-
     const content = data.choices?.[0]?.message?.content;
-    if (!content) {
-      log.error("No 'choices[0].message.content' found in response payload.");
-      log.error(`Full payload: ${JSON.stringify(data)}`);
-      throw new Error("LLM response missing content");
-    }
+    if (!content) throw new Error("LLM response missing content");
 
-    log.info(`Raw model output: ${content}`);
-
-    const cleaned = extractJson(content);
-    const parsed = JSON.parse(cleaned) as GeneratedVerse;
+    const parsed = JSON.parse(extractJson(content)) as GeneratedVerse;
 
     if (
       !parsed?.amp?.text ||
@@ -156,26 +105,12 @@ export async function generateDailyVerse(
       !parsed?.niv?.text ||
       !parsed?.niv?.reference
     ) {
-      log.error("Parsed JSON is missing required fields.");
-      log.error(`Parsed value: ${JSON.stringify(parsed)}`);
       throw new Error("LLM response missing required fields");
     }
 
-    log.info(`Verse curated : "${parsed.amp.reference}"`);
-    log.info(`AMP text      : ${parsed.amp.text}`);
-    log.info(`NIV text      : ${parsed.niv.text}`);
-
-    const totalMs = Date.now() - startedAt;
-    log.info(`── Verse generation succeeded in ${totalMs}ms ────────`);
-
     return parsed;
   } catch (error) {
-    const totalMs = Date.now() - startedAt;
-    log.error(`Verse generation failed after ${totalMs}ms:`, error);
-    log.warn("Falling back to a preset verse so the request doesn't fail.");
-    const fallback = pickFallback();
-    log.info(`Fallback selected: "${fallback.amp.reference}"`);
-    log.info("── Verse generation ended (with fallback) ────────────");
-    return fallback;
+    console.error("Verse generation failed, using fallback:", error);
+    return pickFallback();
   }
 }
