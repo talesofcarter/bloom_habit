@@ -14,8 +14,8 @@ export default function Modal({
   title,
   children,
 }: ModalProps) {
-  const [isMounted, setIsMounted] = useState<Boolean>(false);
-  const [isEntered, setIsEntered] = useState<Boolean>(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isEntered, setIsEntered] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -48,7 +48,7 @@ export default function Modal({
   if (!isMounted) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+    <div className="fixed inset-0 z-50">
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -57,18 +57,16 @@ export default function Modal({
         }`}
       />
 
-      {/* Panel */}
+      {/* Panel — docked to the right edge, slides in from fully offscreen */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-bg-base border border-white/10 rounded-4xl shadow-2xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isEntered
-            ? "translate-x-0 opacity-100"
-            : "translate-x-[45vw] opacity-0"
+        className={`absolute inset-y-0 right-0 w-full max-w-md md:max-w-lg bg-bg-base border-l border-white/10 shadow-2xl flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isEntered ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        <div className="sticky top-0 bg-bg-base/95 backdrop-blur-xl border-b border-white/5 px-6 md:px-8 py-6 flex items-center justify-between rounded-t-4xl z-10">
+        <div className="shrink-0 bg-bg-base/95 backdrop-blur-xl border-b border-white/5 px-6 md:px-8 py-6 flex items-center justify-between">
           <h2 className="text-lg font-medium text-white tracking-wide">
             {title}
           </h2>
@@ -81,7 +79,7 @@ export default function Modal({
           </button>
         </div>
 
-        <div className="p-6 md:p-8">{children}</div>
+        <div className="flex-1 overflow-y-auto p-6 md:p-8">{children}</div>
       </div>
     </div>
   );

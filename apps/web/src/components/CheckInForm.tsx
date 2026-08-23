@@ -121,7 +121,7 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
         <button
           type="submit"
           disabled={isLoading}
-          className="bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest uppercase text-xs px-8 py-4 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(29,185,84,0.15)] hover:shadow-[0_0_25px_rgba(29,185,84,0.3)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest text-xs px-8 py-4 rounded-md transition-all duration-300 shadow-[0_0_15px_rgba(29,185,84,0.15)] hover:shadow-[0_0_25px_rgba(29,185,84,0.3)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? "Saving…" : "Submit Check-In"}
         </button>

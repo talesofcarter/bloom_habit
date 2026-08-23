@@ -59,7 +59,7 @@ export default function Home() {
 
         <button
           onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest uppercase text-xs px-6 py-3.5 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(29,185,84,0.15)] hover:shadow-[0_0_25px_rgba(29,185,84,0.3)] active:scale-[0.98] shrink-0 self-start sm:self-auto"
+          className="inline-flex items-center gap-2 bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest text-xs px-6 py-3.5 rounded-md transition-all duration-300 shadow-[0_0_15px_rgba(29,185,84,0.15)] hover:shadow-[0_0_25px_rgba(29,185,84,0.3)] active:scale-[0.98] shrink-0 self-start sm:self-auto"
         >
           <IconPlus size={16} stroke={2.5} />
           New Check-In
