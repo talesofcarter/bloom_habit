@@ -13,6 +13,7 @@ The core application loop is intentionally simple:
 1.  **Sign Up / Log In:** Securely access your account.
 2.  **Daily Check-in:** Write a private, timestamped note about your day.
 3.  **Track Progress:** Visualize your consistency and progress over time.
+4.
 
 ## 🚀 Key Features
 
@@ -29,18 +30,18 @@ The project is built as a **modular monolith** with a decoupled frontend and bac
 ```
 ┌─────────────────────┐
 │   React SPA (Vite)  │  ← Frontend
-└──────────┬───────────┘
+└──────────┬──────────┘
            │ HTTPS / JSON (REST)
 ┌──────────▼───────────┐
 │  Node.js + Express   │  ← Backend API
-│  - Auth module        │
-│  - Check-ins module    │
-│  - Users module        │
+│  - Auth module       │
+│  - Check-ins module  │
+│  - Users module      │
 └──────────┬───────────┘
            │ Prisma ORM
 ┌──────────▼───────────┐
-│   PostgreSQL          │  ← Persistent storage
-└───────────────────────┘
+│   PostgreSQL         │  ← Persistent storage
+└──────────────────────┘
 ```
 
 ### Key Decisions

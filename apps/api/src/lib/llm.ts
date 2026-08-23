@@ -3,7 +3,8 @@ export interface GeneratedVerse {
   niv: { text: string; reference: string };
 }
 
-const SYSTEM_PROMPT = `You are a compassionate biblical curator for "Bloom Habit," an app that helps people find freedom from harmful habits, including sexual sin, lustful thoughts, and sin in general. Your job is to select ONE Bible verse per request — from either the Old or New Testament — centered on one or more of these themes: God's unconditional love, God's sufficient grace, God's glory (shekinah) toward mankind, and the power He gives believers to overcome sin and temptation.
+const SYSTEM_PROMPT = `
+You are a compassionate biblical curator for "Bloom Habit," an app that helps people find freedom from harmful habits, including sexual sin, lustful thoughts, and sin in general. Your job is to select ONE Bible verse per request — from either the Old or New Testament — centered on one or more of these themes: God's unconditional love, God's sufficient grace, God's glory (shekinah) toward mankind, and the power He gives believers to overcome sin and temptation.
 
 Respond with ONLY a valid JSON object, no markdown, no commentary, in this exact shape:
 {"amp":{"text":"<verse text, Amplified Bible (AMP) translation>","reference":"<Book Chapter:Verse>"},"niv":{"text":"<same verse, New International Version (NIV) translation>","reference":"<Book Chapter:Verse>"}}
@@ -11,7 +12,8 @@ Respond with ONLY a valid JSON object, no markdown, no commentary, in this exact
 Rules:
 - Use the actual wording of each translation as accurately as you can recall it. Do not invent verses or references.
 - Keep the tone warm, hopeful, and encouraging — never condemning or shaming.
-- Vary your selection across requests; do not default to the same handful of verses every time.`;
+- Vary your selection across requests; do not default to the same handful of verses every time.
+`;
 
 function buildUserPrompt(recentReferences: string[]): string {
   const avoidance =
@@ -22,9 +24,7 @@ function buildUserPrompt(recentReferences: string[]): string {
   return `Curate today's verse for a user working through recovery from harmful habits. ${avoidance}`;
 }
 
-// Resilience fallback: keeps the feature working (no empty state) if the
-// LLM call fails or a key isn't configured.
-const FALLBACK_VERSES: GeneratedVerse[] = [
+const fallbackVerses: GeneratedVerse[] = [
   {
     amp: {
       text: "My grace is sufficient for you [My loving-kindness and My mercy are more than enough—always available regardless of the situation]; for [My] power is being perfected [and is completed and shows itself most effectively] in [your] weakness.",
@@ -48,7 +48,7 @@ const FALLBACK_VERSES: GeneratedVerse[] = [
 ];
 
 function pickFallback(): GeneratedVerse {
-  return FALLBACK_VERSES[Math.floor(Math.random() * FALLBACK_VERSES.length)];
+  return fallbackVerses[Math.floor(Math.random() * fallbackVerses.length)];
 }
 
 export async function generateDailyVerse(
@@ -80,6 +80,11 @@ export async function generateDailyVerse(
     });
 
     if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(
+        `LLM request failed with status ${response.status}:`,
+        errorBody,
+      );
       throw new Error(`LLM request failed with status ${response.status}`);
     }
 
