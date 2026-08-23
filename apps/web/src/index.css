@@ -9,7 +9,8 @@
   --color-bg-highlight: #1c1c1c;
   --color-border-subtle: rgba(255, 255, 255, 0.08);
   --color-text-dim: #8a8a8a;
-  --font-geomini: "Geomini", sans-serif;
+  --font-geomini: "DM Sans", sans-serif;
+  --font-bricolage: "Bricolage Grotesque", "sans-serif";
 }
 
 @layer base {

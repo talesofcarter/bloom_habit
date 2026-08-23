@@ -32,10 +32,10 @@ export default function VerseDisplay({ verse, dateLabel }: VerseDisplayProps) {
           stroke={1.5}
         />
         <div className="space-y-2.5">
-          <p className="text-lg md:text-xl font-light text-white/85 leading-relaxed italic">
+          <p className="text-lg md:text-xl font-light text-white/85 leading-relaxed font-bricolage">
             "{translation.text}"
           </p>
-          <p className="text-[11px] font-semibold tracking-[0.2em] text-brand-green/70 uppercase">
+          <p className="text-[11px] font-semibold tracking-[0.2em] text-brand-green/70 font-bricolage">
             {translation.reference}{" "}
             <span className="text-white/25 normal-case tracking-normal">
               ({version.toUpperCase()})
