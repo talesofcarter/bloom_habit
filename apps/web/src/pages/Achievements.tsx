@@ -3,10 +3,18 @@ import { api } from "../lib/api";
 import type { StatsData } from "../types/stats";
 import Badge from "../components/Badge";
 import SkeletonLoader from "../components/SkeletonLoader";
+import WeeklyInsights from "../components/WeeklyInsights";
+import type { CheckInLike } from "../lib/streakAnalytics";
 import confetti from "canvas-confetti";
+import { IconCircleCheck } from "@tabler/icons-react";
+
+interface CheckInRecord extends CheckInLike {
+  id: string;
+}
 
 export default function Achievements() {
   const [stats, setStats] = useState<StatsData | null>(null);
+  const [checkIns, setCheckIns] = useState<CheckInRecord[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,9 +51,13 @@ export default function Achievements() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await api.get<StatsData>("/check-ins/stats");
-        const data = response.data;
+        const [statsRes, checkInsRes] = await Promise.all([
+          api.get<StatsData>("/check-ins/stats"),
+          api.get<CheckInRecord[]>("/check-ins"),
+        ]);
+        const data = statsRes.data;
         setStats(data);
+        setCheckIns(Array.isArray(checkInsRes.data) ? checkInsRes.data : []);
 
         const hitMilestoneToday = data.milestones.some(
           (milestone) => milestone.days === data.currentStreak,
@@ -84,6 +96,8 @@ export default function Achievements() {
           <SkeletonLoader className="h-14 w-32 rounded-2xl shrink-0" />
         </div>
 
+        <SkeletonLoader className="h-44 w-full rounded-3xl" />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
@@ -112,6 +126,9 @@ export default function Achievements() {
       </div>
     );
   }
+
+  const earnedMilestones = stats.milestones.filter((m) => m.earned);
+  const upcomingMilestones = stats.milestones.filter((m) => !m.earned);
 
   // Content
   return (
@@ -146,16 +163,57 @@ export default function Achievements() {
         </div>
       </div>
 
-      {/* Badges Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {stats.milestones.map((milestone) => (
-          <Badge
-            key={milestone.id}
-            milestone={milestone}
-            currentStreak={stats.currentStreak}
-          />
-        ))}
-      </div>
+      {/* Weekly Insights & Analytics */}
+      <WeeklyInsights checkIns={checkIns} currentStreak={stats.currentStreak} />
+
+      {/* Unlocked Milestones — Notion-style checklist */}
+      {earnedMilestones.length > 0 && (
+        <div className="bg-white/3 border border-white/10 rounded-3xl p-6 md:p-8">
+          <h2 className="text-[10px] font-semibold tracking-[0.2em] text-white/30 uppercase mb-4">
+            Unlocked
+          </h2>
+          <div className="divide-y divide-white/5">
+            {earnedMilestones.map((milestone) => (
+              <div key={milestone.id} className="flex items-center gap-3 py-3">
+                <IconCircleCheck
+                  size={18}
+                  className="text-brand-green shrink-0"
+                  stroke={2}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white font-medium truncate">
+                    {milestone.title}
+                  </p>
+                  <p className="text-xs text-white/40 truncate">
+                    {milestone.description}
+                  </p>
+                </div>
+                <span className="text-[10px] font-semibold tracking-widest text-white/25 uppercase shrink-0">
+                  {milestone.days}d
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upcoming Milestones */}
+      {upcomingMilestones.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-[10px] font-semibold tracking-[0.2em] text-white/30 uppercase px-1">
+            Upcoming
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {upcomingMilestones.map((milestone) => (
+              <Badge
+                key={milestone.id}
+                milestone={milestone}
+                currentStreak={stats.currentStreak}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

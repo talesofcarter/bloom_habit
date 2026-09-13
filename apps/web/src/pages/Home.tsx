@@ -11,11 +11,17 @@ import BibleVerseCard from "../components/BibleVerseCard";
 import StatCard from "../components/StatCard";
 import Modal from "../components/Modal";
 import CheckInForm from "../components/CheckInForm";
+import WeeklyInsights from "../components/WeeklyInsights";
+import type { CheckInLike } from "../lib/streakAnalytics";
 
 interface UserStats {
   totalCheckIns: number;
   currentStreak: number;
-  lastCheckIn: string | null;
+}
+
+interface CheckInRecord extends CheckInLike {
+  id: string;
+  title: string;
 }
 
 export default function Home() {
@@ -24,15 +30,23 @@ export default function Home() {
   const [stats, setStats] = useState<UserStats>({
     totalCheckIns: 0,
     currentStreak: 0,
-    lastCheckIn: null,
   });
+  const [checkIns, setCheckIns] = useState<CheckInRecord[]>([]);
   const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchStats = async () => {
     try {
-      const response = await api.get<UserStats>("/check-ins/stats");
-      setStats(response.data);
+      // GET /check-ins/stats never included a `lastCheckIn` field, so the
+      // old "Last Entry" card was silently reading `undefined` forever.
+      // The check-in history endpoint (already ordered newest-first) is the
+      // actual source of truth for "when did I last check in".
+      const [statsRes, checkInsRes] = await Promise.all([
+        api.get<UserStats>("/check-ins/stats"),
+        api.get<CheckInRecord[]>("/check-ins"),
+      ]);
+      setStats(statsRes.data);
+      setCheckIns(Array.isArray(checkInsRes.data) ? checkInsRes.data : []);
     } catch (err) {
       console.error("Failed to load stats", err);
     } finally {
@@ -43,6 +57,8 @@ export default function Home() {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  const lastCheckIn = checkIns[0]?.date ?? null;
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
@@ -98,14 +114,21 @@ export default function Home() {
           glowColorClass="bg-blue-500/8 group-hover:bg-blue-500/15"
           isLoading={isStatsLoading}
         >
-          {stats.lastCheckIn
-            ? new Date(stats.lastCheckIn).toLocaleDateString(undefined, {
+          {lastCheckIn
+            ? new Date(lastCheckIn).toLocaleDateString(undefined, {
                 month: "short",
                 day: "numeric",
               })
             : "—"}
         </StatCard>
       </div>
+
+      {/* Weekly Insights & Analytics */}
+      <WeeklyInsights
+        checkIns={checkIns}
+        currentStreak={stats.currentStreak}
+        isLoading={isStatsLoading}
+      />
 
       {/* Verse of the Day */}
       <BibleVerseCard />
