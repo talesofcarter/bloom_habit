@@ -37,10 +37,6 @@ export default function Home() {
 
   const fetchStats = async () => {
     try {
-      // GET /check-ins/stats never included a `lastCheckIn` field, so the
-      // old "Last Entry" card was silently reading `undefined` forever.
-      // The check-in history endpoint (already ordered newest-first) is the
-      // actual source of truth for "when did I last check in".
       const [statsRes, checkInsRes] = await Promise.all([
         api.get<UserStats>("/check-ins/stats"),
         api.get<CheckInRecord[]>("/check-ins"),
