@@ -126,7 +126,7 @@ export function getMotivationalMessage(
     return "You're on fire this week! Keep the momentum going.";
   }
   if (comparison.trend === "down") {
-    return "A quieter week — that's okay. Show up today and rebuild the rhythm.";
+    return "It was a quieter week, and that's okay. Show up today, regain your momentum, and get back into a consistent rhythm";
   }
   return "Steady and consistent. That's exactly how lasting habits are built.";
 }
