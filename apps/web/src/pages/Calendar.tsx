@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { api } from "../lib/api";
 import {
   IconCalendarEvent,
@@ -9,6 +9,8 @@ import {
 import { isAxiosError } from "axios";
 import SkeletonLoader from "../components/SkeletonLoader";
 import InlineNotice from "../components/InlineNotice";
+import Modal from "../components/Modal";
+import CheckInForm, { type ExistingCheckIn } from "../components/CheckInForm";
 
 interface CheckIn {
   id: string;
@@ -35,31 +37,34 @@ export default function Calendar() {
   // Calendar Grid State
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const response = await api.get("/check-ins");
-        if (Array.isArray(response.data)) {
-          setCheckIns(response.data);
-        } else {
-          setError("Received unexpected data format from the server.");
-          setCheckIns([]);
-        }
-      } catch (err: unknown) {
-        if (isAxiosError(err) && err.response?.data?.error) {
-          setError(err.response.data.error);
-        } else {
-          setError("Failed to load your journey history.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Backfill / Edit-from-calendar State
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-    fetchHistory();
+  const fetchHistory = useCallback(async () => {
+    try {
+      const response = await api.get("/check-ins");
+      if (Array.isArray(response.data)) {
+        setCheckIns(response.data);
+      } else {
+        setError("Received unexpected data format from the server.");
+        setCheckIns([]);
+      }
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Failed to load your journey history.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  // --- Edit Handlers ---
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  // --- Edit Handlers (inline timeline editing) ---
   const handleStartEdit = (entry: CheckIn) => {
     setEditingId(entry.id);
     setEditTitle(entry.title);
@@ -114,17 +119,30 @@ export default function Calendar() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const checkInDateSet = useMemo(() => {
-    const dates = new Set<string>();
+  // Map of "YYYY-MM-DD" -> full check-in, so a calendar cell click can find
+  // (or fail to find) an entry for that day.
+  const checkInByDate = useMemo(() => {
+    const map = new Map<string, CheckIn>();
     safeCheckIns.forEach((entry) => {
       if (entry.date) {
         const dateObj = new Date(entry.date);
         const dateString = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
-        dates.add(dateString);
+        map.set(dateString, entry);
       }
     });
-    return dates;
+    return map;
   }, [safeCheckIns]);
+
+  const checkInDateSet = useMemo(
+    () => new Set(checkInByDate.keys()),
+    [checkInByDate],
+  );
+
+  const todayStart = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -133,6 +151,34 @@ export default function Calendar() {
 
   const handlePrevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const handleNextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
+
+  const handleDayClick = (day: number, isFuture: boolean) => {
+    if (isFuture) return;
+    const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    setSelectedDate(dateString);
+  };
+
+  const selectedEntry: CheckIn | null = selectedDate
+    ? (checkInByDate.get(selectedDate) ?? null)
+    : null;
+
+  const selectedEntryForForm: ExistingCheckIn | null = selectedEntry
+    ? {
+        id: selectedEntry.id,
+        title: selectedEntry.title,
+        note: selectedEntry.note,
+        isRelapse: selectedEntry.isRelapse,
+      }
+    : null;
+
+  const selectedDateLabel = selectedDate
+    ? new Date(`${selectedDate}T00:00:00`).toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
 
   // --- Flat, Editorial SkeletonLoader Loader ---
   if (isLoading) {
@@ -180,7 +226,8 @@ export default function Calendar() {
           Journey
         </h1>
         <p className="text-sm text-white/40 tracking-wide font-light">
-          Your recorded history and daily reflections.
+          Your recorded history and daily reflections. Click any past date below
+          to add or update an entry.
         </p>
       </div>
 
@@ -231,20 +278,37 @@ export default function Calendar() {
             const day = i + 1;
             const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
             const hasCheckIn = checkInDateSet.has(dateString);
+            const cellDate = new Date(year, month, day);
+            const isFuture = cellDate.getTime() > todayStart.getTime();
 
             return (
-              <div
+              <button
                 key={day}
+                type="button"
+                onClick={() => handleDayClick(day, isFuture)}
+                disabled={isFuture}
+                title={
+                  isFuture
+                    ? undefined
+                    : hasCheckIn
+                      ? "View or edit this day's entry"
+                      : "Add an entry for this day"
+                }
                 className={`
                   flex flex-col items-center justify-center h-10 md:h-12 rounded-xl text-sm transition-all duration-300 w-full relative
-                  ${hasCheckIn ? "text-white font-medium bg-white/5" : "text-white/30 hover:bg-white/2"}
+                  ${hasCheckIn ? "text-white font-medium bg-white/5" : "text-white/30"}
+                  ${
+                    isFuture
+                      ? "opacity-30 cursor-not-allowed"
+                      : "cursor-pointer hover:bg-white/8 hover:text-white"
+                  }
                 `}
               >
                 {day}
                 {hasCheckIn && (
                   <div className="absolute bottom-2 w-1 h-1 rounded-full bg-brand-green"></div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
@@ -406,6 +470,28 @@ export default function Calendar() {
           </div>
         )}
       </div>
+
+      {/* Backfill / Edit-from-calendar Modal */}
+      <Modal
+        isOpen={selectedDate !== null}
+        onClose={() => setSelectedDate(null)}
+        title={selectedDateLabel || "Check-In"}
+      >
+        {selectedDate && (
+          <div className="space-y-6">
+            <p className="text-xs text-white/40 tracking-wide">
+              {selectedEntryForForm
+                ? "Update the details you recorded for this day."
+                : "Add an entry for this day. It's never too late to log your progress."}
+            </p>
+            <CheckInForm
+              date={selectedDate}
+              existingCheckIn={selectedEntryForForm}
+              onSuccess={() => fetchHistory()}
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
