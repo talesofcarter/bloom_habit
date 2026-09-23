@@ -5,7 +5,21 @@ import { IconCircleCheck } from "@tabler/icons-react";
 import InlineNotice from "./InlineNotice";
 import Toggle from "./Toggle";
 
-interface CheckInPayload {
+interface CreateCheckInPayload {
+  title: string;
+  note: string;
+  isRelapse: boolean;
+  date?: string;
+}
+
+interface UpdateCheckInPayload {
+  title: string;
+  note: string;
+  isRelapse: boolean;
+}
+
+export interface ExistingCheckIn {
+  id: string;
   title: string;
   note: string;
   isRelapse: boolean;
@@ -13,15 +27,27 @@ interface CheckInPayload {
 
 interface CheckInFormProps {
   onSuccess: () => void;
+  /** ISO date (YYYY-MM-DD) to create the check-in for. Defaults to today when omitted. */
+  date?: string;
+  /** When provided, the form edits this entry instead of creating a new one. */
+  existingCheckIn?: ExistingCheckIn | null;
 }
 
-export default function CheckInForm({ onSuccess }: CheckInFormProps) {
-  const [title, setTitle] = useState("");
-  const [note, setNote] = useState("");
+export default function CheckInForm({
+  onSuccess,
+  date,
+  existingCheckIn = null,
+}: CheckInFormProps) {
+  const isEditing = existingCheckIn !== null;
+
+  const [title, setTitle] = useState(existingCheckIn?.title ?? "");
+  const [note, setNote] = useState(existingCheckIn?.note ?? "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [isRelapse, setIsRelapse] = useState(false);
+  const [isRelapse, setIsRelapse] = useState(
+    existingCheckIn?.isRelapse ?? false,
+  );
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -36,12 +62,27 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
     setIsLoading(true);
 
     try {
-      const payload: CheckInPayload = { title, note, isRelapse };
-      await api.post("/check-ins", payload);
+      if (isEditing && existingCheckIn) {
+        const payload: UpdateCheckInPayload = { title, note, isRelapse };
+        await api.put(`/check-ins/${existingCheckIn.id}`, payload);
+      } else {
+        const payload: CreateCheckInPayload = {
+          title,
+          note,
+          isRelapse,
+          ...(date ? { date } : {}),
+        };
+        await api.post("/check-ins", payload);
+      }
 
       setSuccess(true);
-      setTitle("");
-      setNote("");
+
+      if (!isEditing) {
+        setTitle("");
+        setNote("");
+        setIsRelapse(false);
+      }
+
       onSuccess();
     } catch (err: unknown) {
       if (isAxiosError(err) && err.response) {
@@ -60,9 +101,11 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
         <div className="w-12 h-12 bg-brand-green/20 rounded-full flex items-center justify-center mx-auto mb-4 text-brand-green">
           <IconCircleCheck size={24} stroke={2} />
         </div>
-        <h3 className="text-white font-medium">Check-in complete!</h3>
+        <h3 className="text-white font-medium">
+          {isEditing ? "Check-in updated!" : "Check-in complete!"}
+        </h3>
         <p className="text-white/60 text-sm">
-          Your progress for today has been securely recorded.
+          Your progress has been securely recorded.
         </p>
       </div>
     );
@@ -112,7 +155,7 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
         <Toggle
           checked={isRelapse}
           onChange={setIsRelapse}
-          label="I experienced a setback today"
+          label="I experienced a setback"
           helperText="Be honest. Your notes will help you identify triggers."
         />
       </div>
@@ -123,7 +166,11 @@ export default function CheckInForm({ onSuccess }: CheckInFormProps) {
           disabled={isLoading}
           className="bg-brand-green hover:bg-brand-green-hover text-black font-bold tracking-widest text-xs px-8 py-4 rounded-md transition-all duration-300 shadow-[0_0_15px_rgba(29,185,84,0.15)] hover:shadow-[0_0_25px_rgba(29,185,84,0.3)] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed uppercase"
         >
-          {isLoading ? "Saving…" : "Submit Check-In"}
+          {isLoading
+            ? "Saving…"
+            : isEditing
+              ? "Save Changes"
+              : "Submit Check-In"}
         </button>
       </div>
     </form>
