@@ -27,9 +27,7 @@ export interface ExistingCheckIn {
 
 interface CheckInFormProps {
   onSuccess: () => void;
-  /** ISO date (YYYY-MM-DD) to create the check-in for. Defaults to today when omitted. */
   date?: string;
-  /** When provided, the form edits this entry instead of creating a new one. */
   existingCheckIn?: ExistingCheckIn | null;
 }
 
