@@ -9,6 +9,12 @@ export interface StatsResponse {
   milestones: Milestone[];
 }
 
+interface UpdateCheckInBody {
+  title?: string;
+  note?: string;
+  isRelapse?: boolean;
+}
+
 export const createCheckIn = async (
   req: AuthRequest,
   res: Response,
@@ -169,7 +175,7 @@ export const updateCheckIn = async (
 ): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { title, note } = req.body;
+    const { title, note, isRelapse } = req.body as UpdateCheckInBody;
     const userId = req.userId as string;
 
     // 1. Verify the check-in exists in the database
@@ -182,28 +188,28 @@ export const updateCheckIn = async (
       return;
     }
 
-    // 2. Security Check: Ensure the user actually owns this check-in
+    // 2. Security Check
     if (existingCheckIn.userId !== userId) {
       res.status(403).json({ error: "Unauthorized to edit this entry." });
       return;
     }
 
-    // 3. Validation: Ensure they aren't passing empty strings to wipe their notes
+    // 3. Validation
     if (!title?.trim() || !note?.trim()) {
       res.status(400).json({ error: "Title and note cannot be empty." });
       return;
     }
 
-    // 4. Update the record
+    // 4. Update the record.
     const updatedCheckIn = await prisma.checkIn.update({
       where: { id },
       data: {
         title: title.trim(),
         note: note.trim(),
+        ...(typeof isRelapse === "boolean" ? { isRelapse } : {}),
       },
     });
 
-    // Return the updated record back to the frontend
     res.status(200).json(updatedCheckIn);
   } catch (error) {
     console.error("Update Check-In Error:", error);

@@ -13,7 +13,6 @@ The core application loop is intentionally simple:
 1.  **Sign Up / Log In:** Securely access your account.
 2.  **Daily Check-in:** Write a private, timestamped note about your day.
 3.  **Track Progress:** Visualize your consistency and progress over time.
-4.
 
 ## 🚀 Key Features
 
