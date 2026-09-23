@@ -29,15 +29,9 @@ export default function Calendar() {
   const [editTitle, setEditTitle] = useState("");
   const [editNote, setEditNote] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 7;
-
-  // Calendar Grid State
+  const itemsPerPage = 7;
   const [currentMonth, setCurrentMonth] = useState(new Date());
-
-  // Backfill / Edit-from-calendar State
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
@@ -64,7 +58,6 @@ export default function Calendar() {
     fetchHistory();
   }, [fetchHistory]);
 
-  // --- Edit Handlers (inline timeline editing) ---
   const handleStartEdit = (entry: CheckIn) => {
     setEditingId(entry.id);
     setEditTitle(entry.title);
@@ -113,14 +106,12 @@ export default function Calendar() {
     return Array.isArray(checkIns) ? checkIns : [];
   }, [checkIns]);
 
-  const totalPages = Math.ceil(safeCheckIns.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(safeCheckIns.length / itemsPerPage);
   const paginatedCheckIns = safeCheckIns.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
   );
 
-  // Map of "YYYY-MM-DD" -> full check-in, so a calendar cell click can find
-  // (or fail to find) an entry for that day.
   const checkInByDate = useMemo(() => {
     const map = new Map<string, CheckIn>();
     safeCheckIns.forEach((entry) => {
@@ -180,7 +171,6 @@ export default function Calendar() {
       })
     : "";
 
-  // --- Flat, Editorial SkeletonLoader Loader ---
   if (isLoading) {
     return (
       <div className="space-y-12 max-w-3xl mx-auto pb-16 w-full animate-in fade-in duration-500 mt-4">
@@ -314,7 +304,6 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Notion-like Timeline */}
       <div className="relative ml-2 md:ml-4">
         {safeCheckIns.length === 0 && !error ? (
           <div className="text-center py-24 border-t border-white/5">
@@ -329,7 +318,6 @@ export default function Calendar() {
           </div>
         ) : (
           <div>
-            {/* The Continuous Timeline Border */}
             <div className="relative border-l border-white/10 space-y-12 pb-4">
               {paginatedCheckIns.map((entry) => {
                 const entryDate = entry.date
@@ -369,7 +357,6 @@ export default function Calendar() {
                       )}
                     </div>
 
-                    {/* EDIT MODE (Borderless, Notion-style inputs) */}
                     {isEditing ? (
                       <div className="space-y-3 animate-in fade-in duration-300 -ml-3">
                         <input
@@ -408,7 +395,6 @@ export default function Calendar() {
                         </div>
                       </div>
                     ) : (
-                      /* DISPLAY MODE */
                       <div className="relative">
                         <div className="flex items-start justify-between gap-4">
                           <h3
@@ -443,7 +429,6 @@ export default function Calendar() {
               })}
             </div>
 
-            {/* Notion-style minimal pagination */}
             {totalPages > 1 && (
               <div className="pt-8 mt-4 border-t border-white/5 flex items-center justify-between text-sm">
                 <button
