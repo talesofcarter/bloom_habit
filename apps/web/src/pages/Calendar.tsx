@@ -5,6 +5,7 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconEdit,
+  IconTrash,
 } from "@tabler/icons-react";
 import { isAxiosError } from "axios";
 import SkeletonLoader from "../components/SkeletonLoader";
@@ -33,6 +34,9 @@ export default function Calendar() {
   const itemsPerPage = 7;
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -149,6 +153,12 @@ export default function Calendar() {
     setSelectedDate(dateString);
   };
 
+  const closeModal = () => {
+    setSelectedDate(null);
+    setIsConfirmingDelete(false);
+    setDeleteError(null);
+  };
+
   const selectedEntry: CheckIn | null = selectedDate
     ? (checkInByDate.get(selectedDate) ?? null)
     : null;
@@ -171,6 +181,29 @@ export default function Calendar() {
       })
     : "";
 
+  const handleDeleteEntry = async () => {
+    if (!selectedEntry) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      await api.delete(`/check-ins/${selectedEntry.id}`);
+      setCheckIns((prev) =>
+        prev.filter((item) => item.id !== selectedEntry.id),
+      );
+      closeModal();
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.data?.error) {
+        setDeleteError(err.response.data.error);
+      } else {
+        setDeleteError("Failed to delete this entry.");
+      }
+      setIsDeleting(false);
+    }
+  };
+
+  // SkeletonLoader Loader
   if (isLoading) {
     return (
       <div className="space-y-12 max-w-3xl mx-auto pb-16 w-full animate-in fade-in duration-500 mt-4">
@@ -217,7 +250,7 @@ export default function Calendar() {
         </h1>
         <p className="text-sm text-white/40 tracking-wide font-light">
           Your recorded history and daily reflections. Click any past date below
-          to add or update an entry.
+          to add, update, or remove an entry.
         </p>
       </div>
 
@@ -281,7 +314,7 @@ export default function Calendar() {
                   isFuture
                     ? undefined
                     : hasCheckIn
-                      ? "View or edit this day's entry"
+                      ? "View, edit, or remove this day's entry"
                       : "Add an entry for this day"
                 }
                 className={`
@@ -330,7 +363,6 @@ export default function Calendar() {
                     key={entry.id}
                     className="group/block relative pl-8 md:pl-10"
                   >
-                    {/* Timeline Node (The dot on the line) */}
                     <div
                       className={`absolute left-[-5.5px] top-1.5 w-2.5 h-2.5 rounded-full border-[1.5px] bg-bg-base z-10 transition-all duration-300 ${
                         entry.isRelapse
@@ -405,7 +437,6 @@ export default function Calendar() {
                             {entry.title || "Untitled"}
                           </h3>
 
-                          {/* Hover Action Menu (Now on the right side) */}
                           {!isEditing && (
                             <button
                               onClick={() => handleStartEdit(entry)}
@@ -429,6 +460,7 @@ export default function Calendar() {
               })}
             </div>
 
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="pt-8 mt-4 border-t border-white/5 flex items-center justify-between text-sm">
                 <button
@@ -456,24 +488,89 @@ export default function Calendar() {
         )}
       </div>
 
-      {/* Backfill / Edit-from-calendar Modal */}
       <Modal
         isOpen={selectedDate !== null}
-        onClose={() => setSelectedDate(null)}
+        onClose={closeModal}
         title={selectedDateLabel || "Check-In"}
       >
         {selectedDate && (
           <div className="space-y-6">
             <p className="text-xs text-white/40 tracking-wide">
               {selectedEntryForForm
-                ? "Update the details you recorded for this day."
+                ? "Update or remove the details you recorded for this day."
                 : "Add an entry for this day. It's never too late to log your progress."}
             </p>
+
             <CheckInForm
               date={selectedDate}
               existingCheckIn={selectedEntryForForm}
               onSuccess={() => fetchHistory()}
             />
+
+            {selectedEntryForForm && (
+              <div
+                className={`p-5 rounded-2xl border transition-all duration-300 ${
+                  isConfirmingDelete
+                    ? "border-red-500/30 bg-red-500/10"
+                    : "border-red-500/10 bg-red-500/5"
+                }`}
+              >
+                {!isConfirmingDelete ? (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-white">
+                        Delete this entry
+                      </h3>
+                      <p className="text-xs text-white/50 mt-1">
+                        Permanently remove this check-in from your history.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setIsConfirmingDelete(true)}
+                      className="px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 text-xs font-semibold tracking-widest uppercase rounded-xl transition-colors border border-red-500/20 flex items-center justify-center gap-2 whitespace-nowrap"
+                    >
+                      <IconTrash size={16} />
+                      Delete Entry
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    <div>
+                      <h3 className="text-sm font-bold text-red-400 mb-1">
+                        Are you sure?
+                      </h3>
+                      <p className="text-xs text-red-400/70">
+                        This will permanently delete this check-in. This cannot
+                        be undone.
+                      </p>
+                    </div>
+
+                    {deleteError && (
+                      <div className="p-3 bg-red-500/20 border border-red-500/30 text-white text-xs rounded-lg">
+                        {deleteError}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 pt-2">
+                      <button
+                        onClick={handleDeleteEntry}
+                        disabled={isDeleting}
+                        className="bg-red-500 hover:bg-red-600 text-white font-bold tracking-widest uppercase text-xs px-6 py-3 rounded-xl transition-colors disabled:opacity-50"
+                      >
+                        {isDeleting ? "Deleting..." : "Yes, Delete Entry"}
+                      </button>
+                      <button
+                        onClick={() => setIsConfirmingDelete(false)}
+                        disabled={isDeleting}
+                        className="text-white/50 hover:text-white text-xs font-semibold tracking-widest uppercase px-4 py-3 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </Modal>
