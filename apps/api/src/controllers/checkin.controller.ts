@@ -216,3 +216,34 @@ export const updateCheckIn = async (
     res.status(500).json({ error: "Failed to update check-in." });
   }
 };
+
+export const deleteCheckIn = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const userId = req.userId as string;
+
+    const existingCheckIn = await prisma.checkIn.findUnique({
+      where: { id },
+    });
+
+    if (!existingCheckIn) {
+      res.status(404).json({ error: "Check-in not found." });
+      return;
+    }
+
+    if (existingCheckIn.userId !== userId) {
+      res.status(403).json({ error: "Unauthorized to delete this entry." });
+      return;
+    }
+
+    await prisma.checkIn.delete({ where: { id } });
+
+    res.status(200).json({ message: "Check-in deleted successfully." });
+  } catch (error) {
+    console.error("Delete Check-In Error:", error);
+    res.status(500).json({ error: "Failed to delete check-in." });
+  }
+};
